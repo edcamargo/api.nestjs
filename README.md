@@ -559,7 +559,58 @@ A API implementa controle de acesso baseado em roles (RBAC):
 | `DELETE /api/users/:id/hard` | ❌ | ❌ | ❌ | ✅ |
 | `POST /api/users/:id/restore` | ❌ | ❌ | ❌ | ✅ |
 
-### 📋 Exemplos com cURL
+### � Gerenciamento de Roles
+
+#### Criar Primeiro Administrador
+
+Para criar o primeiro usuário ADMIN, você pode:
+
+**Opção 1: Criar via API (primeiro usuário)**
+```bash
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Admin Principal",
+    "email": "admin@example.com",
+    "password": "senha-segura-admin",
+    "role": "ADMIN"
+  }'
+```
+
+**Opção 2: Atualizar role diretamente no banco de dados**
+```bash
+# Via SQLite CLI
+sqlite3 src/infrastructure/prisma/dev.db "UPDATE users SET role='ADMIN' WHERE email='seu-email@example.com';"
+```
+
+**Opção 3: Via Prisma Studio**
+```bash
+npm run prisma:studio
+# Acesse http://localhost:5555
+# Edite o campo 'role' do usuário para 'ADMIN'
+```
+
+#### Promover Usuário Existente
+
+```bash
+# Requer estar autenticado
+TOKEN="seu-token-admin"
+
+curl -X PUT http://localhost:3000/api/users/<user-id> \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"role": "MODERATOR"}'
+```
+
+#### Validação de Roles
+
+O sistema valida automaticamente que os roles sejam um dos valores permitidos:
+- ✅ `ADMIN` - Administrador total
+- ✅ `MODERATOR` - Moderador  
+- ✅ `USER` - Usuário padrão
+- ❌ Qualquer outro valor será rejeitado com erro de validação
+
+### �📋 Exemplos com cURL
 
 **Login:**
 ```bash
@@ -772,8 +823,15 @@ A aplicação utiliza um sistema de tratamento de erros padronizado através do 
 ### Autorização RBAC
 - **RolesGuard** valida permissões baseadas em roles
 - Decorator `@Roles()` define roles permitidas por endpoint
-- Sistema hierárquico: `ADMIN > MODERATOR > USER`
+- Sistema hierárquico de permissões por role
+- Validação automática do role do usuário em cada request
 - Mensagens de erro claras (401 Unauthorized, 403 Forbidden)
+- **Granularidade de acesso**:
+  - `ADMIN`: Acesso total, incluindo operações destrutivas
+  - `MODERATOR`: Acesso a listagens e visualizações completas
+  - `USER`: Acesso básico aos próprios recursos
+- Proteção contra escalação de privilégios
+- Roles validados no DTO com `@IsIn()` decorator
 
 ### Hash de Senhas
 - Todas as senhas são criptografadas usando **bcryptjs**
@@ -794,6 +852,34 @@ A aplicação utiliza um sistema de tratamento de erros padronizado através do 
 - ✅ **Input Validation**: Validação rigorosa de DTOs
 - ✅ **Error Handling**: Mensagens de erro padronizadas
 - ✅ **JWT Signature**: Tokens assinados e verificados
+
+### 🛡️ Boas Práticas de Segurança
+
+#### Produção
+1. **JWT_SECRET**: Sempre use uma chave forte e aleatória em produção
+   ```bash
+   # Gere uma chave segura:
+   node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+   ```
+
+2. **Roles**: Princípio do menor privilégio
+   - Novos usuários sempre começam com role `USER`
+   - Promoções de role devem ser auditadas
+   - Evite criar múltiplos usuários `ADMIN` sem necessidade
+
+3. **Token**: Configure tempo de expiração adequado
+   - Desenvolvimento: 24h (configurado)
+   - Produção: Considere 1-2h com refresh token
+
+4. **HTTPS**: Sempre use HTTPS em produção para proteger tokens em trânsito
+
+5. **Rate Limiting**: Implemente para prevenir brute force em `/auth/login`
+
+#### Desenvolvimento
+- ✅ Use `.env` para configurações sensíveis
+- ✅ Nunca commite `.env` no Git (já está no `.gitignore`)
+- ✅ Use `.env.example` como template
+- ✅ Passwords de teste devem ser diferentes das de produção
 
 ## 🗄️ Banco de Dados - Prisma
 
@@ -826,6 +912,23 @@ model User {
   @@map("users")
 }
 ```
+
+### Histórico de Migrations
+
+O projeto possui as seguintes migrations aplicadas:
+
+1. **20251028110605_init**
+   - Criação inicial da tabela `users`
+   - Campos: id, name, email, password, timestamps
+
+2. **20251028114403_add_soft_delete** 
+   - Adição do campo `deletedAt` (nullable)
+   - Suporte para soft delete
+
+3. **20251028121837_add_user_role**
+   - Adição do campo `role` com default `'USER'`
+   - Suporte para sistema RBAC
+   - Usuários existentes receberam automaticamente role `'USER'`
 
 ### Comandos Prisma
 
@@ -985,10 +1088,111 @@ async getProfile(@CurrentUser() user: IAuthenticatedUser) {
 }
 
 // Ou apenas um campo:
+// Ou apenas um campo:
 @Get('my-id')
 async getMyId(@CurrentUser('userId') userId: string) {
   return { userId };
 }
+```
+
+## 🚀 Guia Rápido de Uso
+
+### Cenário 1: Primeiro Acesso (Setup Inicial)
+
+```bash
+# 1. Criar primeiro usuário administrador
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Admin Principal",
+    "email": "admin@empresa.com",
+    "password": "Admin@123",
+    "role": "ADMIN"
+  }'
+
+# 2. Fazer login e obter token
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@empresa.com",
+    "password": "Admin@123"
+  }'
+
+# 3. Copie o accessToken retornado
+TOKEN="seu-token-jwt-aqui"
+
+# 4. Teste o acesso administrativo
+curl http://localhost:3000/api/users \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Cenário 2: Criar Moderador
+
+```bash
+# 1. Admin cria um novo moderador
+curl -X POST http://localhost:3000/api/users \
+  -H "Authorization: Bearer $TOKEN_ADMIN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Moderador",
+    "email": "moderador@empresa.com",
+    "password": "Mod@123",
+    "role": "MODERATOR"
+  }'
+
+# 2. Moderador faz login
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "moderador@empresa.com",
+    "password": "Mod@123"
+  }'
+
+# 3. Moderador pode listar usuários mas não deletar permanentemente
+curl http://localhost:3000/api/users \
+  -H "Authorization: Bearer $TOKEN_MODERATOR"
+```
+
+### Cenário 3: Usuário Comum (Registro Público)
+
+```bash
+# 1. Criar conta (não precisa de autenticação)
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "João Silva",
+    "email": "joao@example.com",
+    "password": "senha123"
+  }'
+# Role será automaticamente 'USER'
+
+# 2. Login
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "joao@example.com",
+    "password": "senha123"
+  }'
+
+# 3. Usuário pode acessar seus próprios dados
+TOKEN_USER="token-do-usuario"
+curl http://localhost:3000/api/users/<seu-id> \
+  -H "Authorization: Bearer $TOKEN_USER"
+```
+
+### Cenário 4: Testes no Swagger
+
+1. Inicie o servidor: `npm run start:dev`
+2. Acesse: http://localhost:3000/api
+3. No Swagger UI:
+   - Execute `POST /auth/login`
+   - Copie o `accessToken` da resposta
+   - Clique no botão **"Authorize"** 🔒 no topo
+   - Cole o token (sem prefixo "Bearer")
+   - Clique em "Authorize" e depois "Close"
+   - Agora todos os endpoints protegidos funcionarão!
+
+## 📚 Documentação Adicional
 ```
 
 ## � Documentação Adicional
