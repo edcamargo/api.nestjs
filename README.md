@@ -31,6 +31,8 @@ API desenvolvida para demonstrar boas práticas de arquitetura de software, apli
 - ✅ **Tratamento Padronizado de Erros**
 - ✅ **Documentação com Swagger**
 - ✅ **Soft Delete** (Exclusão Lógica com Recuperação)
+- ✅ **Autenticação JWT** (JSON Web Token)
+- ✅ **Autorização RBAC** (Role-Based Access Control)
 
 ## 🏗️ Arquitetura
 
@@ -82,6 +84,9 @@ O projeto segue uma arquitetura em camadas bem definida:
 
 ### Bibliotecas Principais
 - **[@nestjs/swagger](https://docs.nestjs.com/openapi/introduction)** - Documentação OpenAPI/Swagger
+- **[@nestjs/jwt](https://docs.nestjs.com/security/authentication)** - Autenticação JWT
+- **[@nestjs/passport](https://docs.nestjs.com/security/authentication)** - Estratégias de autenticação
+- **[passport-jwt](http://www.passportjs.org/packages/passport-jwt/)** - Estratégia JWT para Passport
 - **[class-validator](https://github.com/typestack/class-validator)** - Validação de DTOs
 - **[class-transformer](https://github.com/typestack/class-transformer)** - Transformação de objetos
 - **[bcryptjs](https://github.com/dcodeIO/bcrypt.js)** - Hash de senhas
@@ -93,6 +98,11 @@ O projeto segue uma arquitetura em camadas bem definida:
 api.nestjs/
 ├── src/
 │   ├── application/              # Camada de Aplicação
+│   │   ├── auth/                 # 🔐 Módulo de autenticação
+│   │   │   ├── auth.service.ts
+│   │   │   ├── login.dto.ts
+│   │   │   ├── auth-response.dto.ts
+│   │   │   └── index.ts
 │   │   ├── dtos/                 # Data Transfer Objects
 │   │   │   ├── create-user.dto.ts
 │   │   │   ├── update-user.dto.ts
@@ -103,13 +113,22 @@ api.nestjs/
 │   │       └── user.service.ts
 │   │
 │   ├── domain/                   # Camada de Domínio
+│   │   ├── auth/                 # 🔐 Interfaces de autenticação
+│   │   │   ├── auth.repository.interface.ts
+│   │   │   ├── jwt.interface.ts
+│   │   │   └── index.ts
 │   │   ├── interfaces/           # Contratos/Abstrações
 │   │   │   └── user.repository.ts
 │   │   └── user/                 # Entidade de domínio
-│   │       ├── user.entity.ts
+│   │       ├── user.entity.ts    # Inclui UserRole enum
 │   │       └── user.constants.ts
 │   │
 │   ├── infrastructure/           # Camada de Infraestrutura
+│   │   ├── auth/                 # 🔐 Estratégias e Guards
+│   │   │   ├── jwt.strategy.ts
+│   │   │   ├── jwt-auth.guard.ts
+│   │   │   ├── roles.guard.ts
+│   │   │   └── index.ts
 │   │   ├── database/             # Configuração de banco
 │   │   │   └── prisma.service.ts
 │   │   ├── prisma/               # Prisma ORM
@@ -120,6 +139,13 @@ api.nestjs/
 │   │       └── user.repository.ts
 │   │
 │   ├── presentation/             # Camada de Apresentação
+│   │   ├── auth/                 # 🔐 Controllers e Decorators
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── auth.module.ts
+│   │   │   ├── roles.decorator.ts
+│   │   │   ├── public.decorator.ts
+│   │   │   ├── current-user.decorator.ts
+│   │   │   └── index.ts
 │   │   ├── filters/              # Filtros e Interceptors
 │   │   │   ├── all-exceptions.filter.ts
 │   │   │   └── response.interceptor.ts
@@ -130,7 +156,10 @@ api.nestjs/
 │   ├── app.module.ts             # Módulo raiz
 │   └── main.ts                   # Bootstrap da aplicação
 │
+├── docs/                         # Documentação
+│   └── AUTH_ARCHITECTURE.md      # Arquitetura de autenticação
 ├── test/                         # Testes E2E
+├── .env.example                  # Variáveis de ambiente
 ├── prisma.config.ts              # Configuração do Prisma
 ├── package.json
 └── tsconfig.json
@@ -157,8 +186,12 @@ api.nestjs/
 
 3. **Configure as variáveis de ambiente**
    ```bash
-   # O arquivo .env já está configurado com SQLite
+   # Copie o arquivo de exemplo
+   cp .env.example .env
+   
+   # Configure as variáveis (especialmente JWT_SECRET)
    # DATABASE_URL="file:./dev.db"
+   # JWT_SECRET="your-secret-key-change-in-production"
    ```
 
 4. **Execute as migrations do Prisma**
@@ -212,9 +245,62 @@ npm run test:cov       # Gera relatório de cobertura
 
 ## 🔌 Endpoints da API
 
+### 🔐 Autenticação
+
+Base URL: `http://localhost:3000/auth`
+
+#### Login
+```http
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+```
+
+**Resposta de Sucesso (200):**
+```json
+{
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "uuid-v4",
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "role": "ADMIN",
+      "createdAt": "2025-10-28T12:34:56.789Z",
+      "updatedAt": "2025-10-28T12:34:56.789Z"
+    }
+  }
+}
+```
+
+**Erro - Credenciais Inválidas (401):**
+```json
+{
+  "statusCode": 401,
+  "error": {
+    "message": "Invalid credentials",
+    "details": null,
+    "code": null
+  },
+  "timestamp": "2025-10-28T12:34:56.789Z",
+  "path": "/auth/login"
+}
+```
+
+### 👤 Usuários
+
 Base URL: `http://localhost:3000/api/users`
 
+> **📌 Nota:** A maioria dos endpoints requer autenticação JWT. Inclua o header:
+> `Authorization: Bearer <seu-token-jwt>`
+
 ### 📝 Criar Usuário
+**🔓 Rota Pública** (não requer autenticação)
+
 ```http
 POST /api/users
 Content-Type: application/json
@@ -222,9 +308,12 @@ Content-Type: application/json
 {
   "name": "João Silva",
   "email": "joao@example.com",
-  "password": "senha123"
+  "password": "senha123",
+  "role": "USER"
 }
 ```
+
+> **Roles disponíveis:** `USER` (padrão), `MODERATOR`, `ADMIN`
 
 **Resposta de Sucesso (201):**
 ```json
@@ -233,6 +322,7 @@ Content-Type: application/json
     "id": "uuid-v4",
     "name": "João Silva",
     "email": "joao@example.com",
+    "role": "USER",
     "createdAt": "2025-10-28T12:34:56.789Z",
     "updatedAt": "2025-10-28T12:34:56.789Z"
   }
@@ -254,8 +344,11 @@ Content-Type: application/json
 ```
 
 ### 📋 Listar Usuários
+**🔒 Requer:** `ADMIN` ou `MODERATOR`
+
 ```http
 GET /api/users
+Authorization: Bearer <token>
 ```
 
 **Resposta de Sucesso (200):**
@@ -274,8 +367,11 @@ GET /api/users
 ```
 
 ### 🔍 Buscar Usuário por ID
+**🔐 Requer:** Autenticação (qualquer usuário autenticado)
+
 ```http
 GET /api/users/:id
+Authorization: Bearer <token>
 ```
 
 **Resposta de Sucesso (200):**
@@ -285,6 +381,7 @@ GET /api/users/:id
     "id": "uuid-v4",
     "name": "João Silva",
     "email": "joao@example.com",
+    "role": "USER",
     "createdAt": "2025-10-28T12:34:56.789Z",
     "updatedAt": "2025-10-28T12:34:56.789Z"
   }
@@ -306,14 +403,18 @@ GET /api/users/:id
 ```
 
 ### ✏️ Atualizar Usuário
+**🔐 Requer:** Autenticação (qualquer usuário autenticado)
+
 ```http
 PUT /api/users/:id
+Authorization: Bearer <token>
 Content-Type: application/json
 
 {
   "name": "João M. Silva",
   "email": "novo@example.com",
-  "password": "novaSenha123"
+  "password": "novaSenha123",
+  "role": "MODERATOR"
 }
 ```
 
@@ -324,6 +425,7 @@ Content-Type: application/json
     "id": "uuid-v4",
     "name": "João M. Silva",
     "email": "novo@example.com",
+    "role": "MODERATOR",
     "createdAt": "2025-10-28T12:34:56.789Z",
     "updatedAt": "2025-10-28T14:20:10.123Z"
   }
@@ -335,8 +437,11 @@ Content-Type: application/json
 O sistema implementa **soft delete**, permitindo recuperar usuários deletados.
 
 #### Deletar Usuário (Soft Delete)
+**🔐 Requer:** Autenticação (qualquer usuário autenticado)
+
 ```http
 DELETE /api/users/:id
+Authorization: Bearer <token>
 ```
 
 **Resposta de Sucesso (204):** No Content
@@ -344,17 +449,37 @@ DELETE /api/users/:id
 > O usuário é marcado como deletado (`deletedAt` preenchido) mas permanece no banco de dados.
 
 #### Deletar Permanentemente (Hard Delete)
+**🔒 Requer:** `ADMIN` apenas
+
 ```http
 DELETE /api/users/:id/hard
+Authorization: Bearer <token>
 ```
 
 **Resposta de Sucesso (204):** No Content
 
 > ⚠️ **ATENÇÃO**: Esta operação remove o usuário permanentemente do banco de dados e não pode ser desfeita!
+> 
+> **Erro - Sem Permissão (403):**
+> ```json
+> {
+>   "statusCode": 403,
+>   "error": {
+>     "message": "You do not have permission to access this resource",
+>     "details": null,
+>     "code": null
+>   },
+>   "timestamp": "2025-10-28T15:30:00.000Z",
+>   "path": "/api/users/<id>/hard"
+> }
+> ```
 
 #### Restaurar Usuário Deletado
+**🔒 Requer:** `ADMIN` apenas
+
 ```http
 POST /api/users/:id/restore
+Authorization: Bearer <token>
 ```
 
 **Resposta de Sucesso (200):**
@@ -364,6 +489,7 @@ POST /api/users/:id/restore
     "id": "uuid-v4",
     "name": "João Silva",
     "email": "joao@example.com",
+    "role": "USER",
     "createdAt": "2025-10-28T12:34:56.789Z",
     "updatedAt": "2025-10-28T14:20:10.123Z"
   }
@@ -385,8 +511,11 @@ POST /api/users/:id/restore
 ```
 
 #### Listar Incluindo Usuários Deletados
+**🔒 Requer:** `ADMIN` ou `MODERATOR`
+
 ```http
 GET /api/users?includeDeleted=true
+Authorization: Bearer <token>
 ```
 
 **Resposta de Sucesso (200):**
@@ -397,6 +526,7 @@ GET /api/users?includeDeleted=true
       "id": "uuid-v4",
       "name": "João Silva",
       "email": "joao@example.com",
+      "role": "USER",
       "createdAt": "2025-10-28T12:34:56.789Z",
       "updatedAt": "2025-10-28T12:34:56.789Z"
     }
@@ -404,7 +534,42 @@ GET /api/users?includeDeleted=true
 }
 ```
 
+## 🔑 Sistema de Roles (RBAC)
+
+A API implementa controle de acesso baseado em roles (RBAC):
+
+### Roles Disponíveis
+
+| Role | Descrição | Permissões |
+|------|-----------|-----------|
+| **ADMIN** | Administrador | Acesso total, incluindo hard delete e restore |
+| **MODERATOR** | Moderador | Pode listar usuários e ver deletados |
+| **USER** | Usuário comum | Acesso básico aos próprios recursos |
+
+### Matriz de Permissões
+
+| Endpoint | Public | USER | MODERATOR | ADMIN |
+|----------|--------|------|-----------|-------|
+| `POST /auth/login` | ✅ | ✅ | ✅ | ✅ |
+| `POST /api/users` | ✅ | ✅ | ✅ | ✅ |
+| `GET /api/users` | ❌ | ❌ | ✅ | ✅ |
+| `GET /api/users/:id` | ❌ | ✅ | ✅ | ✅ |
+| `PUT /api/users/:id` | ❌ | ✅ | ✅ | ✅ |
+| `DELETE /api/users/:id` | ❌ | ✅ | ✅ | ✅ |
+| `DELETE /api/users/:id/hard` | ❌ | ❌ | ❌ | ✅ |
+| `POST /api/users/:id/restore` | ❌ | ❌ | ❌ | ✅ |
+
 ### 📋 Exemplos com cURL
+
+**Login:**
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "admin123"
+  }'
+```
 
 **Criar usuário:**
 ```bash
@@ -413,45 +578,56 @@ curl -X POST http://localhost:3000/api/users \
   -d '{
     "name": "João Silva",
     "email": "joao@example.com",
-    "password": "senha123"
+    "password": "senha123",
+    "role": "USER"
   }'
 ```
 
-**Listar usuários (apenas ativos):**
+**Listar usuários (requer ADMIN/MODERATOR):**
 ```bash
-curl http://localhost:3000/api/users
+# Primeiro, pegue o token do login
+TOKEN="seu-token-jwt-aqui"
+
+curl http://localhost:3000/api/users \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-**Listar incluindo deletados:**
+**Listar incluindo deletados (requer ADMIN/MODERATOR):**
 ```bash
-curl "http://localhost:3000/api/users?includeDeleted=true"
+curl "http://localhost:3000/api/users?includeDeleted=true" \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-**Buscar por ID:**
+**Buscar por ID (requer autenticação):**
 ```bash
-curl http://localhost:3000/api/users/<id>
+curl http://localhost:3000/api/users/<id> \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-**Atualizar:**
+**Atualizar (requer autenticação):**
 ```bash
 curl -X PUT http://localhost:3000/api/users/<id> \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "João Atualizado"}'
 ```
 
-**Soft Delete:**
+**Soft Delete (requer autenticação):**
 ```bash
-curl -X DELETE http://localhost:3000/api/users/<id>
+curl -X DELETE http://localhost:3000/api/users/<id> \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-**Restaurar:**
+**Restaurar (requer ADMIN):**
 ```bash
-curl -X POST http://localhost:3000/api/users/<id>/restore
+curl -X POST http://localhost:3000/api/users/<id>/restore \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-**Hard Delete:**
+**Hard Delete (requer ADMIN):**
 ```bash
-curl -X DELETE http://localhost:3000/api/users/<id>/hard
+curl -X DELETE http://localhost:3000/api/users/<id>/hard \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ## 📖 Documentação Interativa
@@ -465,6 +641,17 @@ A aplicação disponibiliza documentação interativa via **Swagger UI**, onde v
 - ✅ Esquemas de request/response
 - ✅ Teste interativo de APIs
 - ✅ Validações e exemplos de uso
+- ✅ **Autenticação Bearer JWT integrada**
+
+### Como Usar Autenticação no Swagger
+
+1. Acesse [http://localhost:3000/api](http://localhost:3000/api)
+2. Faça login via endpoint `POST /auth/login`
+3. Copie o `accessToken` da resposta
+4. Clique no botão **"Authorize"** 🔒 no topo da página
+5. Cole o token no campo (sem o prefixo "Bearer")
+6. Clique em **"Authorize"** e depois **"Close"**
+7. Agora você pode testar endpoints protegidos! ✅
 
 ## ⚠️ Tratamento de Erros
 
@@ -531,6 +718,34 @@ A aplicação utiliza um sistema de tratamento de erros padronizado através do 
 }
 ```
 
+**Não Autorizado (401):**
+```json
+{
+  "statusCode": 401,
+  "error": {
+    "message": "Unauthorized",
+    "details": null,
+    "code": null
+  },
+  "timestamp": "2025-10-28T12:34:56.789Z",
+  "path": "/api/users"
+}
+```
+
+**Sem Permissão (403):**
+```json
+{
+  "statusCode": 403,
+  "error": {
+    "message": "You do not have permission to access this resource",
+    "details": null,
+    "code": null
+  },
+  "timestamp": "2025-10-28T12:34:56.789Z",
+  "path": "/api/users"
+}
+```
+
 **Erro Interno (500):**
 ```json
 {
@@ -547,15 +762,38 @@ A aplicação utiliza um sistema de tratamento de erros padronizado através do 
 
 ## 🔒 Segurança
 
+### Autenticação JWT
+- **Token JWT** gerado no login com expiração de 24 horas
+- Tokens assinados com `JWT_SECRET` (configure no `.env`)
+- **Passport JWT Strategy** para validação automática
+- **Guard Global**: todas as rotas protegidas por padrão
+- Decorator `@Public()` para rotas públicas (login, registro)
+
+### Autorização RBAC
+- **RolesGuard** valida permissões baseadas em roles
+- Decorator `@Roles()` define roles permitidas por endpoint
+- Sistema hierárquico: `ADMIN > MODERATOR > USER`
+- Mensagens de erro claras (401 Unauthorized, 403 Forbidden)
+
 ### Hash de Senhas
 - Todas as senhas são criptografadas usando **bcryptjs**
 - Salt rounds: 10
 - Senhas **nunca** são retornadas nas respostas da API
+- Comparação segura usando `bcrypt.compare()`
 
 ### Validação de Dados
 - DTOs com validação rigorosa via **class-validator**
 - Whitelist habilitada: propriedades não declaradas são removidas automaticamente
 - Transform habilitado: tipos são convertidos automaticamente
+- Validação de email, senha (mínimo 6 caracteres), roles
+
+### Proteções Implementadas
+- ✅ **Token Expiration**: Tokens expiram em 24h
+- ✅ **Password Hashing**: Senhas nunca em texto puro
+- ✅ **Role Validation**: Autorização granular por endpoint
+- ✅ **Input Validation**: Validação rigorosa de DTOs
+- ✅ **Error Handling**: Mensagens de erro padronizadas
+- ✅ **JWT Signature**: Tokens assinados e verificados
 
 ## 🗄️ Banco de Dados - Prisma
 
@@ -580,6 +818,7 @@ model User {
   name      String
   email     String    @unique
   password  String
+  role      String    @default("USER")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
@@ -625,12 +864,29 @@ npm run test:watch
 
 ## 📝 DTOs e Validação
 
+### LoginDto
+```typescript
+{
+  email: string;     // @IsEmail(), @IsNotEmpty()
+  password: string;  // @IsString(), @MinLength(6), @IsNotEmpty()
+}
+```
+
+### AuthResponseDto
+```typescript
+{
+  accessToken: string;
+  user: UserResponseDto;
+}
+```
+
 ### CreateUserDto
 ```typescript
 {
   name: string;      // @IsString(), @MinLength(2)
   email: string;     // @IsEmail()
   password: string;  // @IsString(), @MinLength(6)
+  role?: UserRole;   // @IsIn(['ADMIN', 'USER', 'MODERATOR']), @IsOptional()
 }
 ```
 
@@ -640,6 +896,7 @@ npm run test:watch
   name?: string;     // @IsString(), @MinLength(2), @IsOptional()
   email?: string;    // @IsEmail(), @IsOptional()
   password?: string; // @IsString(), @MinLength(6), @IsOptional()
+  role?: UserRole;   // @IsIn(['ADMIN', 'USER', 'MODERATOR']), @IsOptional()
 }
 ```
 
@@ -649,6 +906,7 @@ npm run test:watch
   id: string;
   name: string;
   email: string;
+  role: UserRole;    // 'ADMIN' | 'USER' | 'MODERATOR'
   createdAt: Date;
   updatedAt: Date;
   // password é EXCLUÍDO através do mapper
@@ -680,7 +938,7 @@ providers: [
 ]
 ```
 
-### Global Pipes e Filters
+### Global Pipes, Filters e Guards
 ```typescript
 // main.ts
 app.useGlobalPipes(new ValidationPipe({ 
@@ -689,16 +947,70 @@ app.useGlobalPipes(new ValidationPipe({
 }));
 app.useGlobalFilters(new AllExceptionsFilter());
 app.useGlobalInterceptors(new ResponseInterceptor());
+
+// app.module.ts
+providers: [
+  {
+    provide: APP_GUARD,
+    useClass: JwtAuthGuard, // Guard global de autenticação
+  },
+]
 ```
 
-## 🚀 Próximos Passos
+### Custom Decorators
+
+**@Public()** - Marca rota como pública:
+```typescript
+@Public()
+@Post('login')
+async login(@Body() loginDto: LoginDto) {
+  return this.authService.login(loginDto);
+}
+```
+
+**@Roles()** - Restringe por roles:
+```typescript
+@Roles(UserRole.ADMIN, UserRole.MODERATOR)
+@Get()
+async findAll() {
+  return this.userService.findAll();
+}
+```
+
+**@CurrentUser()** - Injeta usuário autenticado:
+```typescript
+@Get('profile')
+async getProfile(@CurrentUser() user: IAuthenticatedUser) {
+  return user;
+}
+
+// Ou apenas um campo:
+@Get('my-id')
+async getMyId(@CurrentUser('userId') userId: string) {
+  return { userId };
+}
+```
+
+## � Documentação Adicional
+
+Para entender em profundidade a arquitetura de autenticação, consulte:
+
+- **[docs/AUTH_ARCHITECTURE.md](docs/AUTH_ARCHITECTURE.md)** - Arquitetura completa do sistema de autenticação
+  - Estrutura organizada por camadas
+  - Fluxos de autenticação e autorização
+  - Sistema de roles detalhado
+  - Padrões e boas práticas aplicados
+
+## �🚀 Próximos Passos
 
 - [x] **Implementar soft delete** ✨
-- [ ] Implementar autenticação JWT
+- [x] **Implementar autenticação JWT** ✨
+- [x] **Sistema de roles (RBAC)** ✨
+- [ ] Adicionar refresh tokens
+- [ ] Implementar rate limiting
 - [ ] Adicionar testes unitários e E2E
 - [ ] Implementar paginação
 - [ ] Adicionar filtros e ordenação
-- [ ] Adicionar rate limiting
 - [ ] Implementar cache com Redis
 - [ ] Adicionar logging estruturado
 - [ ] CI/CD com GitHub Actions

@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { IUserRepository } from '../../domain/interfaces/user.repository';
-import { User } from '../../domain/user/user.entity';
-import { PrismaService } from '../database/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { IUserRepository } from "../../domain/interfaces/user.repository";
+import { User, UserRole } from "../../domain/user/user.entity";
+import { PrismaService } from "../database/prisma.service";
 
 @Injectable()
 export class UserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private toDomain(entity: any): User {
     // adapta objeto do Prisma para a entidade de domínio
@@ -14,6 +14,7 @@ export class UserRepository implements IUserRepository {
       entity.name,
       entity.email,
       entity.password,
+      entity.role as UserRole,
       entity.createdAt,
       entity.updatedAt,
       entity.deletedAt ?? null,
@@ -27,6 +28,7 @@ export class UserRepository implements IUserRepository {
         name: user.name,
         email: user.email,
         password: user.password,
+        role: user.role,
       },
     });
     return this.toDomain(saved);
@@ -49,7 +51,10 @@ export class UserRepository implements IUserRepository {
     return entity ? this.toDomain(entity) : null;
   }
 
-  async findByEmail(email: string, includeDeleted = false): Promise<User | null> {
+  async findByEmail(
+    email: string,
+    includeDeleted = false,
+  ): Promise<User | null> {
     const entity = await this.prisma.user.findFirst({
       where: {
         email,
@@ -63,6 +68,7 @@ export class UserRepository implements IUserRepository {
     const data: any = {
       name: user.name,
       email: user.email,
+      role: user.role,
       updatedAt: user.updatedAt,
     };
 

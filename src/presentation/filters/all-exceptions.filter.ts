@@ -5,8 +5,8 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
+} from "@nestjs/common";
+import { Request, Response } from "express";
 
 @Catch()
 @Injectable()
@@ -17,27 +17,29 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     const isHttp = exception instanceof HttpException;
-    const status = isHttp ? (exception as HttpException).getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    const status = isHttp
+      ? exception.getStatus()
+      : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    let rawResponse: any = isHttp ? (exception as HttpException).getResponse() : null;
+    const rawResponse: any = isHttp ? exception.getResponse() : null;
     let message: string | null = null;
     let details: unknown = null;
     let code: string | null = null;
 
     if (isHttp) {
-      if (typeof rawResponse === 'string') {
+      if (typeof rawResponse === "string") {
         message = rawResponse;
-      } else if (rawResponse && typeof rawResponse === 'object') {
-        if (Array.isArray((rawResponse as any).message)) {
-          details = (rawResponse as any).message;
-          message = (rawResponse as any).message[0] ?? null;
+      } else if (rawResponse && typeof rawResponse === "object") {
+        if (Array.isArray(rawResponse.message)) {
+          details = rawResponse.message;
+          message = rawResponse.message[0] ?? null;
         } else {
-          message = (rawResponse as any).message ?? (rawResponse as any).error ?? null;
+          message = rawResponse.message ?? rawResponse.error ?? null;
         }
-        code = (rawResponse as any).code ?? null;
+        code = rawResponse.code ?? null;
       }
     } else {
-      message = (exception as any)?.message ?? 'Internal server error';
+      message = (exception as any)?.message ?? "Internal server error";
     }
 
     const errorPayload = {
