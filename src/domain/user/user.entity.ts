@@ -6,5 +6,7 @@ export class User {
     public password: string,
     public createdAt: Date,
     public updatedAt: Date,
+    // deletedAt is optional for soft delete
+    public deletedAt?: Date | null,
   ) { }
 }

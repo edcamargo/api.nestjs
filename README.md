@@ -30,6 +30,7 @@ API desenvolvida para demonstrar boas práticas de arquitetura de software, apli
 - ✅ **DTOs e Validação Automática**
 - ✅ **Tratamento Padronizado de Erros**
 - ✅ **Documentação com Swagger**
+- ✅ **Soft Delete** (Exclusão Lógica com Recuperação)
 
 ## 🏗️ Arquitetura
 
@@ -329,12 +330,79 @@ Content-Type: application/json
 }
 ```
 
-### 🗑️ Deletar Usuário
+### 🗑️ Soft Delete (Exclusão Lógica)
+
+O sistema implementa **soft delete**, permitindo recuperar usuários deletados.
+
+#### Deletar Usuário (Soft Delete)
 ```http
 DELETE /api/users/:id
 ```
 
 **Resposta de Sucesso (204):** No Content
+
+> O usuário é marcado como deletado (`deletedAt` preenchido) mas permanece no banco de dados.
+
+#### Deletar Permanentemente (Hard Delete)
+```http
+DELETE /api/users/:id/hard
+```
+
+**Resposta de Sucesso (204):** No Content
+
+> ⚠️ **ATENÇÃO**: Esta operação remove o usuário permanentemente do banco de dados e não pode ser desfeita!
+
+#### Restaurar Usuário Deletado
+```http
+POST /api/users/:id/restore
+```
+
+**Resposta de Sucesso (200):**
+```json
+{
+  "data": {
+    "id": "uuid-v4",
+    "name": "João Silva",
+    "email": "joao@example.com",
+    "createdAt": "2025-10-28T12:34:56.789Z",
+    "updatedAt": "2025-10-28T14:20:10.123Z"
+  }
+}
+```
+
+**Erro - Usuário não está deletado (409):**
+```json
+{
+  "statusCode": 409,
+  "error": {
+    "message": "User is not deleted",
+    "details": null,
+    "code": null
+  },
+  "timestamp": "2025-10-28T15:30:00.000Z",
+  "path": "/api/users/<id>/restore"
+}
+```
+
+#### Listar Incluindo Usuários Deletados
+```http
+GET /api/users?includeDeleted=true
+```
+
+**Resposta de Sucesso (200):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid-v4",
+      "name": "João Silva",
+      "email": "joao@example.com",
+      "createdAt": "2025-10-28T12:34:56.789Z",
+      "updatedAt": "2025-10-28T12:34:56.789Z"
+    }
+  ]
+}
+```
 
 ### 📋 Exemplos com cURL
 
@@ -349,9 +417,14 @@ curl -X POST http://localhost:3000/api/users \
   }'
 ```
 
-**Listar usuários:**
+**Listar usuários (apenas ativos):**
 ```bash
 curl http://localhost:3000/api/users
+```
+
+**Listar incluindo deletados:**
+```bash
+curl "http://localhost:3000/api/users?includeDeleted=true"
 ```
 
 **Buscar por ID:**
@@ -366,9 +439,19 @@ curl -X PUT http://localhost:3000/api/users/<id> \
   -d '{"name": "João Atualizado"}'
 ```
 
-**Deletar:**
+**Soft Delete:**
 ```bash
 curl -X DELETE http://localhost:3000/api/users/<id>
+```
+
+**Restaurar:**
+```bash
+curl -X POST http://localhost:3000/api/users/<id>/restore
+```
+
+**Hard Delete:**
+```bash
+curl -X DELETE http://localhost:3000/api/users/<id>/hard
 ```
 
 ## 📖 Documentação Interativa
@@ -493,12 +576,13 @@ src/infrastructure/prisma/
 
 ```prisma
 model User {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
-  email     String   @unique
+  email     String    @unique
   password  String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   @@map("users")
 }
@@ -609,11 +693,11 @@ app.useGlobalInterceptors(new ResponseInterceptor());
 
 ## 🚀 Próximos Passos
 
+- [x] **Implementar soft delete** ✨
 - [ ] Implementar autenticação JWT
 - [ ] Adicionar testes unitários e E2E
 - [ ] Implementar paginação
 - [ ] Adicionar filtros e ordenação
-- [ ] Implementar soft delete
 - [ ] Adicionar rate limiting
 - [ ] Implementar cache com Redis
 - [ ] Adicionar logging estruturado

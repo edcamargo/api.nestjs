@@ -9,7 +9,15 @@ export class UserRepository implements IUserRepository {
 
   private toDomain(entity: any): User {
     // adapta objeto do Prisma para a entidade de domínio
-    return new User(entity.id, entity.name, entity.email, entity.password, entity.createdAt, entity.updatedAt);
+    return new User(
+      entity.id,
+      entity.name,
+      entity.email,
+      entity.password,
+      entity.createdAt,
+      entity.updatedAt,
+      entity.deletedAt ?? null,
+    );
   }
 
   async create(user: User): Promise<User> {
@@ -19,42 +27,72 @@ export class UserRepository implements IUserRepository {
         name: user.name,
         email: user.email,
         password: user.password,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
       },
     });
     return this.toDomain(saved);
   }
 
-  async findAll(): Promise<User[]> {
-    const entities = await this.prisma.user.findMany();
+  async findAll(includeDeleted = false): Promise<User[]> {
+    const entities = await this.prisma.user.findMany({
+      where: includeDeleted ? {} : { deletedAt: null },
+    });
     return entities.map((e) => this.toDomain(e));
   }
 
-  async findById(id: string): Promise<User | null> {
-    const entity = await this.prisma.user.findUnique({ where: { id } });
+  async findById(id: string, includeDeleted = false): Promise<User | null> {
+    const entity = await this.prisma.user.findFirst({
+      where: {
+        id,
+        ...(includeDeleted ? {} : { deletedAt: null }),
+      },
+    });
     return entity ? this.toDomain(entity) : null;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    const entity = await this.prisma.user.findUnique({ where: { email } });
+  async findByEmail(email: string, includeDeleted = false): Promise<User | null> {
+    const entity = await this.prisma.user.findFirst({
+      where: {
+        email,
+        ...(includeDeleted ? {} : { deletedAt: null }),
+      },
+    });
     return entity ? this.toDomain(entity) : null;
   }
 
   async update(user: User): Promise<User> {
+    const data: any = {
+      name: user.name,
+      email: user.email,
+      updatedAt: user.updatedAt,
+    };
+
+    if (user.password) {
+      data.password = user.password;
+    }
+
     const updated = await this.prisma.user.update({
       where: { id: user.id },
-      data: {
-        name: user.name,
-        email: user.email,
-        password: user.password,
-        updatedAt: user.updatedAt,
-      },
+      data,
     });
-    return updated ? this.toDomain(updated) : user;
+    return this.toDomain(updated);
   }
 
   async delete(id: string): Promise<void> {
     await this.prisma.user.delete({ where: { id } });
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async restore(id: string): Promise<User> {
+    const restored = await this.prisma.user.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+    return this.toDomain(restored);
   }
 }

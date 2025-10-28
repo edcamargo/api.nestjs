@@ -12,19 +12,23 @@ export class UserService {
   constructor(@Inject(USER_REPOSITORY) private readonly repo: IUserRepository) { }
 
   async create(dto: CreateUserDto): Promise<User> {
-    const existing = await this.repo.findByEmail(dto.email);
-    if (existing) {
+    const existing = await this.repo.findByEmail(dto.email, true);
+    if (existing && !existing.deletedAt) {
       throw new ConflictException('Email already in use');
+    }
+
+    if (existing && existing.deletedAt) {
+      throw new ConflictException('Email was previously used by a deleted account. Please contact support.');
     }
 
     const hashed = await bcrypt.hash(dto.password, 10);
     const now = new Date();
-    const user = new User(uuidv4(), dto.name, dto.email, hashed, now, now);
+    const user = new User(uuidv4(), dto.name, dto.email, hashed, now, now, null);
     return this.repo.create(user);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.repo.findAll();
+  async findAll(includeDeleted = false): Promise<User[]> {
+    return this.repo.findAll(includeDeleted);
   }
 
   async findById(id: string): Promise<User> {
@@ -36,8 +40,8 @@ export class UserService {
   async update(id: string, dto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
     if (dto.email && dto.email !== user.email) {
-      const byEmail = await this.repo.findByEmail(dto.email);
-      if (byEmail) throw new ConflictException('Email already in use');
+      const byEmail = await this.repo.findByEmail(dto.email, true);
+      if (byEmail && byEmail.id !== id) throw new ConflictException('Email already in use');
     }
 
     user.name = dto.name ?? user.name;
@@ -49,9 +53,23 @@ export class UserService {
     return this.repo.update(user);
   }
 
-  async delete(id: string): Promise<void> {
-    await this.findById(id); // Ensure user exists
+  async remove(id: string): Promise<void> {
+    const user = await this.findById(id);
+    if (!user) throw new NotFoundException('User not found');
+    await this.repo.softDelete(id);
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    const user = await this.repo.findById(id, true);
+    if (!user) throw new NotFoundException('User not found');
     await this.repo.delete(id);
+  }
+
+  async restore(id: string): Promise<User> {
+    const user = await this.repo.findById(id, true);
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.deletedAt) throw new ConflictException('User is not deleted');
+    return this.repo.restore(id);
   }
 
 }
