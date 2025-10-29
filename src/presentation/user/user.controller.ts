@@ -24,12 +24,12 @@ import {
 } from "@nestjs/swagger";
 import { UserResponseDto } from "../../application/dtos/user-response.dto";
 import { Roles, Public } from "../auth";
-import { RolesGuard } from "../../infrastructure/auth";
+import { RolesGuard, JwtAuthGuard } from "../../infrastructure/auth";
 import { UserRole } from "../../domain/user/user.entity";
 
 @ApiTags("Users")
 @Controller("api/users")
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class UserController {
   constructor(private readonly service: UserService) { }
