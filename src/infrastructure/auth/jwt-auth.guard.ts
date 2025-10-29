@@ -27,6 +27,39 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
       return true;
     }
 
-    return super.canActivate(context);
+    const result = super.canActivate(context);
+
+    // If super.canActivate returns a promise, attach logging when resolved
+    if (result && typeof (result as Promise<boolean>).then === "function") {
+      return (result as Promise<boolean>).then((res) => {
+        // attempt to log user if available
+        try {
+          const req = context.switchToHttp().getRequest();
+          // eslint-disable-next-line no-console
+          console.log("[JwtAuthGuard] canActivate result:", res, "user:", req.user);
+        } catch (e) {
+          // ignore logging errors
+        }
+        return res;
+      });
+    }
+
+    try {
+      const req = context.switchToHttp().getRequest();
+      // eslint-disable-next-line no-console
+      console.log("[JwtAuthGuard] canActivate result:", result, "user:", req.user);
+    } catch (e) {
+      // ignore logging errors
+    }
+
+    return result;
+  }
+
+  // Override handleRequest to log the passport result for easier debugging
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
+    // eslint-disable-next-line no-console
+    console.log("[JwtAuthGuard] handleRequest -> err:", err, "user:", user, "info:", info);
+    return super.handleRequest(err, user, info, context);
   }
 }

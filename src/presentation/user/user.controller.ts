@@ -37,11 +37,7 @@ export class UserController {
   @Public()
   @Post()
   @ApiOperation({ summary: "Create a new user" })
-  @ApiResponse({
-    status: 201,
-    description: "User created",
-    type: UserResponseDto,
-  })
+  @ApiResponse({ status: 201, description: "User created", type: UserResponseDto })
   @ApiResponse({ status: 409, description: "Email already in use" })
   async create(@Body() dto: CreateUserDto) {
     const user = await this.service.create(dto);
@@ -57,11 +53,7 @@ export class UserController {
     type: Boolean,
     description: "Include soft deleted users",
   })
-  @ApiResponse({
-    status: 200,
-    description: "List of users",
-    type: [UserResponseDto],
-  })
+  @ApiResponse({ status: 200, description: "List of users", type: [UserResponseDto] })
   async findAll(@Query("includeDeleted") includeDeleted?: string) {
     const include = includeDeleted === "true";
     const users = await this.service.findAll(include);
@@ -70,11 +62,7 @@ export class UserController {
 
   @Get(":id")
   @ApiOperation({ summary: "Get user by id" })
-  @ApiResponse({
-    status: 200,
-    description: "User found",
-    type: UserResponseDto,
-  })
+  @ApiResponse({ status: 200, description: "User found", type: UserResponseDto })
   @ApiResponse({ status: 404, description: "User not found" })
   async findById(@Param("id") id: string) {
     const user = await this.service.findById(id);
@@ -83,11 +71,7 @@ export class UserController {
 
   @Put(":id")
   @ApiOperation({ summary: "Update user by id" })
-  @ApiResponse({
-    status: 200,
-    description: "User updated",
-    type: UserResponseDto,
-  })
+  @ApiResponse({ status: 200, description: "User updated", type: UserResponseDto })
   @ApiResponse({ status: 404, description: "User not found" })
   async update(@Param("id") id: string, @Body() dto: UpdateUserDto) {
     const user = await this.service.update(id, dto);
@@ -107,10 +91,7 @@ export class UserController {
   @Delete(":id/hard")
   @HttpCode(204)
   @ApiOperation({ summary: "Permanently delete a user" })
-  @ApiResponse({
-    status: 204,
-    description: "User permanently deleted from database",
-  })
+  @ApiResponse({ status: 204, description: "User permanently deleted from database" })
   @ApiResponse({ status: 404, description: "User not found" })
   async hardDelete(@Param("id") id: string) {
     await this.service.hardDelete(id);
@@ -119,11 +100,7 @@ export class UserController {
   @Roles(UserRole.ADMIN)
   @Post(":id/restore")
   @ApiOperation({ summary: "Restore a soft deleted user" })
-  @ApiResponse({
-    status: 200,
-    description: "User successfully restored",
-    type: UserResponseDto,
-  })
+  @ApiResponse({ status: 200, description: "User successfully restored", type: UserResponseDto })
   @ApiResponse({ status: 404, description: "User not found" })
   @ApiResponse({ status: 409, description: "User is not deleted" })
   async restore(@Param("id") id: string) {
