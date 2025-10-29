@@ -27,7 +27,7 @@ import { Roles, Public } from "../auth";
 import { RolesGuard } from "../../infrastructure/auth";
 import { UserRole } from "../../domain/user/user.entity";
 
-@ApiTags("users")
+@ApiTags("Users")
 @Controller("api/users")
 @UseGuards(RolesGuard)
 @ApiBearerAuth()

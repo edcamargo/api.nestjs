@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { Public } from '../auth';
 
@@ -11,31 +11,38 @@ export class HealthController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'Health check - liveness probe' })
+  @ApiResponse({ status: 200, description: 'Service is healthy' })
   async healthCheck() {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
     };
   }
 
   @Public()
   @Get('ready')
   @ApiOperation({ summary: 'Readiness check - database connection' })
+  @ApiResponse({ status: 200, description: 'Service is ready' })
+  @ApiResponse({ status: 503, description: 'Service is not ready' })
   async readinessCheck() {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
       return {
         status: 'ready',
-        database: 'connected',
         timestamp: new Date().toISOString(),
+        checks: {
+          database: 'ok',
+        },
       };
     } catch (error) {
       return {
-        status: 'not ready',
-        database: 'disconnected',
-        error: error.message,
+        status: 'not_ready',
         timestamp: new Date().toISOString(),
+        checks: {
+          database: 'error',
+        },
       };
     }
   }
@@ -43,17 +50,23 @@ export class HealthController {
   @Public()
   @Get('metrics')
   @ApiOperation({ summary: 'Application metrics' })
+  @ApiResponse({ status: 200, description: 'Current metrics' })
   async metrics() {
     const memoryUsage = process.memoryUsage();
     return {
+      timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       memory: {
-        rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
-        heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
-        heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
+        rss: `${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`,
+        heapTotal: `${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
+        heapUsed: `${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`,
+        external: `${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB`,
       },
-      cpu: process.cpuUsage(),
-      timestamp: new Date().toISOString(),
+      process: {
+        pid: process.pid,
+        nodeVersion: process.version,
+        platform: process.platform,
+      },
     };
   }
 }

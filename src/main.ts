@@ -19,11 +19,26 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle("Dark API")
-    .setDescription("API Dark, studying NestJS + TypeORM + SOLID principles")
+    .setDescription("API demonstrando Clean Architecture com NestJS, Prisma e RBAC completo")
     .setVersion("1.0")
-    .addTag("users")
-    .addTag("Authentication")
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    // Tags ordenadas (ordem de exibição no Swagger)
+    .addTag('Health', 'Health checks e métricas da aplicação')
+    .addTag('Authentication', 'Autenticação e autorização JWT')
+    .addTag('Users', 'Gerenciamento de usuários')
+    .addTag('Roles', 'Gerenciamento de papéis e permissões')
+    .addTag('Environment Permissions', 'Permissões por ambiente')
+    .addTag('Role Assignments', 'Atribuições de papéis e permissões')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -82,7 +97,13 @@ async function bootstrap() {
   };
 
   wrapResponsesWithData(document);
-  SwaggerModule.setup("api", app, document);
+  SwaggerModule.setup("api", app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'method',
+    },
+  });
 
   const preferredPort = Number(process.env.PORT ?? 3000);
 

@@ -16,6 +16,7 @@
 - [Arquitetura](#-arquitetura)
 - [Tecnologias](#-tecnologias)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Sistema RBAC](#-sistema-rbac)
 - [Observabilidade](#-observabilidade)
 - [Instalação](#-instalação)
 - [Scripts Disponíveis](#-scripts-disponíveis)
@@ -37,6 +38,7 @@ API desenvolvida para demonstrar boas práticas de arquitetura de software, apli
 - ✅ **Soft Delete** (Exclusão Lógica com Recuperação)
 - ✅ **Autenticação JWT** (JSON Web Token)
 - ✅ **Autorização RBAC** (Role-Based Access Control)
+- ✅ **Sistema RBAC Completo** (Roles, Permissions, Assignments com validação de integridade)
 - ✅ **Observabilidade** (Logs, Métricas e Traces com OpenTelemetry)
 - ✅ **Interface Segregation** (Dependency Inversion Principle)
 
@@ -211,7 +213,313 @@ api.nestjs/
 └── tsconfig.json
 ```
 
-## 📊 Observabilidade
+## � Sistema RBAC
+
+A aplicação implementa um **sistema completo de RBAC** (Role-Based Access Control) com validação de integridade referencial e relacionamentos complexos entre entidades.
+
+### 🏗️ Modelo de Dados
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                           User                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│ - id: string                                                        │
+│ - name: string                                                      │
+│ - surname: string                                                   │
+│ - email: string                                                     │
+│ - username: string                                                  │
+│ - password: string                                                  │
+│ - phone1: string                                                    │
+│ - phone2: string?                                                   │
+│ - workIp: string?                                                   │
+│ - notes: string?                                                    │
+│ - state: UserState (Active/Inactive/Suspended)                     │
+│ - role: UserRole (ADMIN/USER/MODERATOR)                            │
+│ - createdAt: Date                                                   │
+│ - updatedAt: Date                                                   │
+│ - deletedAt: Date?                                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│ + fullName(): string                                                │
+│ + isActive(): boolean                                               │
+└─────────────────────────────────────────────────────────────────────┘
+         │                                           │
+         │ 1                                         │ 1
+         │ grantedBy                                 │ assignedTo
+         │                                           │
+         │                                           │
+         │                                           ▼ *
+         │                              ┌─────────────────────────────────┐
+         │                              │     RoleAssignment              │
+         │                              ├─────────────────────────────────┤
+         │                              │ - id: string                    │
+         │                              │ - userId: string (FK)           │
+         │                              │ - roles: string[] (FK)          │
+         │                              │ - accessEnvironments: string[]  │
+         │                              │ - startDate: Date               │
+         │                              │ - endDate: Date?                │
+         │                              │ - state: RoleAssignmentState    │
+         │                              │ - notes: string                 │
+         │                              │ - grantedBy: string (FK)        │
+         └─────────────────────────────>│ - createdAt: Date               │
+                              *         │ - updatedAt: Date               │
+                         grantedBy      │ - deletedAt: Date?              │
+                                        ├─────────────────────────────────┤
+                                        │ + isActive(): boolean           │
+                                        │ + hasRole(roleId): boolean      │
+                                        │ + hasEnvironmentAccess(): bool  │
+                                        └─────────────────────────────────┘
+                                                 │              │
+                                                 │ *            │ *
+                                                 │ roles        │ accessEnvironments
+                                                 │              │
+                                                 ▼              ▼
+                         ┌───────────────────────────┐   ┌──────────────────────────────┐
+                         │         Role              │   │  EnvironmentPermission       │
+                         ├───────────────────────────┤   ├──────────────────────────────┤
+                         │ - id: string              │   │ - id: string                 │
+                         │ - name: string            │   │ - name: string               │
+                         │ - description: string     │   │ - permittedActions: Action[] │
+                         │ - accessAreas: string[]   │   │ - profile: string            │
+                         │ - active: boolean         │   │ - purpose: string            │
+                         │ - createdAt: Date         │   │ - createdAt: Date            │
+                         │ - updatedAt: Date         │   │ - updatedAt: Date            │
+                         │ - deletedAt: Date?        │   │ - deletedAt: Date?           │
+                         ├───────────────────────────┤   ├──────────────────────────────┤
+                         │ + isActive(): boolean     │   │ + canPerformAction(): bool   │
+                         │ + hasAccessToArea(): bool │   │ + hasAllActions(): boolean   │
+                         └───────────────────────────┘   └──────────────────────────────┘
+```
+
+### 📊 Relacionamentos
+
+| Relação | Cardinalidade | Tipo | Descrição |
+|---------|---------------|------|-----------|
+| User → RoleAssignment (assignedTo) | 1:N | Composição | Um usuário pode ter múltiplas atribuições |
+| User → RoleAssignment (grantedBy) | 1:N | Associação | Um admin pode conceder múltiplas atribuições |
+| RoleAssignment → Role | N:M | Agregação (JSON) | Uma atribuição pode ter múltiplos papéis |
+| RoleAssignment → EnvironmentPermission | N:M | Agregação (JSON) | Uma atribuição pode ter múltiplas permissões de ambiente |
+
+### 🔒 Validações de Integridade Referencial
+
+O sistema implementa validações robustas para garantir a consistência dos dados:
+
+#### 1. **Criação de Role Assignment**
+```typescript
+// Valida que todos os IDs referenciados existem:
+✅ userId deve existir em User
+✅ grantedBy deve existir em User  
+✅ Todos os IDs em roles[] devem existir em Role
+✅ Todos os IDs em accessEnvironments[] devem existir em EnvironmentPermission
+✅ startDate <= endDate (se endDate existir)
+```
+
+#### 2. **Exclusão de Role**
+```typescript
+// Impede exclusão se estiver em uso:
+❌ Soft Delete: Bloqueia se houver RoleAssignment ativas usando o Role
+❌ Hard Delete: Bloqueia se houver QUALQUER RoleAssignment (mesmo deletada) usando o Role
+
+// Mensagem de erro:
+"Cannot delete role: it is currently being used in X role assignment(s)"
+```
+
+#### 3. **Exclusão de Environment Permission**
+```typescript
+// Impede exclusão se estiver em uso:
+❌ Soft Delete: Bloqueia se houver RoleAssignment ativas usando a EnvironmentPermission
+❌ Hard Delete: Bloqueia se houver QUALQUER RoleAssignment usando a EnvironmentPermission
+
+// Mensagem de erro:
+"Cannot delete environment permission: it is currently being used in X role assignment(s)"
+```
+
+### 🎯 Cenários de Uso
+
+#### Cenário 1: Atribuir Roles e Permissões a um Usuário
+
+```bash
+# Admin concede acesso ao usuário
+curl -X POST http://localhost:3000/role-assignments \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "user-uuid",
+    "roles": ["role-uuid-1", "role-uuid-2"],
+    "accessEnvironments": ["env-perm-uuid-dev", "env-perm-uuid-qa"],
+    "startDate": "2025-01-01",
+    "endDate": "2025-12-31",
+    "state": "Active",
+    "notes": "Acesso temporário para projeto X",
+    "grantedBy": "admin-uuid"
+  }'
+```
+
+#### Cenário 2: Criar Role com Áreas de Acesso
+
+```bash
+curl -X POST http://localhost:3000/roles \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Developer",
+    "description": "Desenvolvedor com acesso a repositórios",
+    "accessAreas": ["Repository", "CI/CD", "Logs"],
+    "active": true
+  }'
+```
+
+#### Cenário 3: Criar Permissão de Ambiente
+
+```bash
+curl -X POST http://localhost:3000/environment-permissions \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "@DEV",
+    "permittedActions": ["READ", "WRITE", "EXECUTE"],
+    "profile": "Development",
+    "purpose": "Ambiente de desenvolvimento com acesso total"
+  }'
+```
+
+#### Cenário 4: Auditoria - Ver Quem Concedeu Permissões
+
+```bash
+# Buscar todas as atribuições concedidas por um admin
+curl http://localhost:3000/role-assignments/user/$ADMIN_ID \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+#### Cenário 5: Proteção contra Exclusão Indevida
+
+```bash
+# Tentar deletar um Role em uso
+curl -X DELETE http://localhost:3000/roles/role-uuid \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+
+# Resposta:
+{
+  "statusCode": 409,
+  "message": "Cannot delete role: it is currently being used in 3 role assignment(s)",
+  "error": "Conflict"
+}
+```
+
+### 🛡️ Regras de Negócio
+
+1. **Role**
+   - `name` deve ser único
+   - `active = false` não impede uso em novas atribuições (permite histórico)
+   - Não pode ser deletado se estiver em uso
+
+2. **EnvironmentPermission**
+   - `name` deve ser único (ex: "@DEV", "@PROD", "@QA")
+   - `permittedActions` deve conter pelo menos 1 ação
+   - Ações permitidas: `READ`, `WRITE`, `DELETE`, `EXECUTE`
+   - Não pode ser deletado se estiver em uso
+
+3. **RoleAssignment**
+   - `userId` e `grantedBy` devem existir
+   - `startDate` <= `endDate`
+   - `state = Active` só é válido dentro do range de datas
+   - Estados: `Active`, `Inactive`, `Suspended`, `Expired`
+   - Todos os IDs referenciados devem existir
+
+### 🚀 Endpoints da API RBAC
+
+#### Roles
+- `POST /roles` - Criar novo papel
+- `GET /roles` - Listar todos (com `?includeDeleted=true`)
+- `GET /roles/active` - Listar apenas ativos
+- `GET /roles/:id` - Buscar por ID
+- `PUT /roles/:id` - Atualizar
+- `DELETE /roles/:id` - Soft delete
+- `POST /roles/:id/restore` - Restaurar deletado
+- `DELETE /roles/:id/hard` - Excluir permanentemente
+
+#### Environment Permissions
+- `POST /environment-permissions` - Criar nova permissão
+- `GET /environment-permissions` - Listar todas
+- `GET /environment-permissions/:id` - Buscar por ID
+- `PUT /environment-permissions/:id` - Atualizar
+- `DELETE /environment-permissions/:id` - Soft delete
+- `POST /environment-permissions/:id/restore` - Restaurar
+- `DELETE /environment-permissions/:id/hard` - Excluir permanentemente
+
+#### Role Assignments
+- `POST /role-assignments` - Criar nova atribuição
+- `GET /role-assignments` - Listar todas
+- `GET /role-assignments/user/:userId` - Buscar por usuário
+- `GET /role-assignments/user/:userId/active` - Buscar atribuições ativas do usuário
+- `GET /role-assignments/:id` - Buscar por ID
+- `PUT /role-assignments/:id` - Atualizar
+- `DELETE /role-assignments/:id` - Soft delete
+- `POST /role-assignments/:id/restore` - Restaurar
+- `DELETE /role-assignments/:id/hard` - Excluir permanentemente
+
+### 📁 Estrutura do Código RBAC
+
+```
+src/
+├── domain/
+│   ├── role/
+│   │   ├── role.entity.ts
+│   │   ├── role.constants.ts
+│   │   └── index.ts
+│   ├── environment-permission/
+│   │   ├── environment-permission.entity.ts
+│   │   ├── environment-permission.constants.ts
+│   │   └── index.ts
+│   ├── role-assignment/
+│   │   ├── role-assignment.entity.ts
+│   │   ├── role-assignment.constants.ts
+│   │   └── index.ts
+│   └── interfaces/
+│       ├── role.repository.ts
+│       ├── environment-permission.repository.ts
+│       └── role-assignment.repository.ts
+│
+├── application/
+│   ├── dtos/
+│   │   ├── create-role.dto.ts
+│   │   ├── update-role.dto.ts
+│   │   ├── role-response.dto.ts
+│   │   ├── create-environment-permission.dto.ts
+│   │   ├── update-environment-permission.dto.ts
+│   │   ├── environment-permission-response.dto.ts
+│   │   ├── create-role-assignment.dto.ts
+│   │   ├── update-role-assignment.dto.ts
+│   │   └── role-assignment-response.dto.ts
+│   ├── mappers/
+│   │   ├── role.mapper.ts
+│   │   ├── environment-permission.mapper.ts
+│   │   └── role-assignment.mapper.ts
+│   └── services/
+│       ├── role.service.ts
+│       ├── environment-permission.service.ts
+│       └── role-assignment.service.ts
+│
+├── infrastructure/
+│   ├── repositories/
+│   │   ├── role.repository.ts
+│   │   ├── environment-permission.repository.ts
+│   │   └── role-assignment.repository.ts
+│   └── prisma/
+│       └── schema.prisma
+│
+└── presentation/
+    ├── role/
+    │   ├── role.controller.ts
+    │   └── role.module.ts
+    ├── environment-permission/
+    │   ├── environment-permission.controller.ts
+    │   └── environment-permission.module.ts
+    └── role-assignment/
+        ├── role-assignment.controller.ts
+        └── role-assignment.module.ts
+```
+
+## �📊 Observabilidade
 
 A aplicação implementa uma **camada completa de observabilidade** seguindo os princípios de **Clean Architecture** com **OpenTelemetry** para logs, métricas e traces distribuídos.
 
@@ -1544,7 +1852,14 @@ Para entender em profundidade as arquiteturas implementadas:
 - [x] **Clean Architecture em 4 camadas** ✨
 - [x] **Soft delete com recuperação** ✨
 - [x] **Autenticação JWT** ✨
-- [x] **Sistema de roles (RBAC)** ✨
+- [x] **Sistema de roles (RBAC básico)** ✨
+- [x] **Sistema RBAC completo** ✨
+  - [x] Entidades: Role, EnvironmentPermission, RoleAssignment
+  - [x] Relacionamentos bidirecionais User ↔ RoleAssignment
+  - [x] Validação de integridade referencial
+  - [x] Proteção contra exclusão em cascata
+  - [x] Máquina de estados para atribuições
+  - [x] Auditoria (quem concedeu a permissão)
 - [x] **Observabilidade completa (OpenTelemetry)** ✨
   - [x] Logs estruturados com contexto
   - [x] Métricas (HTTP requests, errors, latency)

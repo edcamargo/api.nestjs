@@ -1,5 +1,7 @@
 import { User } from "../user/user.entity";
 
+export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
+
 export interface IUserRepository {
   create(user: User): Promise<User>;
   findAll(includeDeleted?: boolean): Promise<User[]>;
