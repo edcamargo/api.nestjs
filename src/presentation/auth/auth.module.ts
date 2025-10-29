@@ -6,7 +6,6 @@ import { AuthService } from "../../application/auth";
 import { JwtStrategy } from "../../infrastructure/auth";
 import { USER_REPOSITORY } from "../../domain/user/user.constants";
 import { UserRepository } from "../../infrastructure/repositories/user.repository";
-import { PrismaService } from "../../infrastructure/database/prisma.service";
 
 /**
  * AuthModule encapsulates authentication functionality
@@ -26,7 +25,6 @@ import { PrismaService } from "../../infrastructure/database/prisma.service";
   providers: [
     AuthService,
     JwtStrategy,
-    PrismaService,
     {
       provide: USER_REPOSITORY,
       useClass: UserRepository,

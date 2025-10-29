@@ -6,6 +6,9 @@
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-000000?style=flat&logo=opentelemetry&logoColor=white)](https://opentelemetry.io/)
+[![Clean Architecture](https://img.shields.io/badge/Clean_Architecture-00ADD8?style=flat&logo=architecture&logoColor=white)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+[![SOLID](https://img.shields.io/badge/SOLID-FF6B6B?style=flat&logo=solid&logoColor=white)](https://en.wikipedia.org/wiki/SOLID)
 
 ## 📋 Índice
 
@@ -13,6 +16,7 @@
 - [Arquitetura](#-arquitetura)
 - [Tecnologias](#-tecnologias)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Observabilidade](#-observabilidade)
 - [Instalação](#-instalação)
 - [Scripts Disponíveis](#-scripts-disponíveis)
 - [Endpoints da API](#-endpoints-da-api)
@@ -25,7 +29,7 @@ API desenvolvida para demonstrar boas práticas de arquitetura de software, apli
 
 - ✅ **Clean Architecture** (Arquitetura em Camadas)
 - ✅ **Princípios SOLID**
-- ✅ **Dependency Injection**
+- ✅ **Dependency Injection com Tokens**
 - ✅ **Repository Pattern**
 - ✅ **DTOs e Validação Automática**
 - ✅ **Tratamento Padronizado de Erros**
@@ -33,6 +37,31 @@ API desenvolvida para demonstrar boas práticas de arquitetura de software, apli
 - ✅ **Soft Delete** (Exclusão Lógica com Recuperação)
 - ✅ **Autenticação JWT** (JSON Web Token)
 - ✅ **Autorização RBAC** (Role-Based Access Control)
+- ✅ **Observabilidade** (Logs, Métricas e Traces com OpenTelemetry)
+- ✅ **Interface Segregation** (Dependency Inversion Principle)
+
+### 🌟 Destaques da Arquitetura
+
+#### 🏗️ Clean Architecture com Observabilidade
+```
+Application Layer (Interfaces)  →  Define contratos (ILogger, IMetrics)
+         ↓
+Infrastructure Layer (Implementações) → OpenTelemetry SDK
+         ↓
+Presentation Layer (HTTP) → Controllers com logging automático
+```
+
+#### 🔐 Segurança Robusta
+- JWT com expiração configurável
+- Hash bcrypt para senhas
+- RBAC com 3 níveis (USER, MODERATOR, ADMIN)
+- Guards globais + decorators customizados
+
+#### 📊 Observabilidade Completa
+- **Logs**: Console colorido + OpenTelemetry Logs API
+- **Métricas**: Contadores e histogramas customizados
+- **Traces**: Auto-instrumentação distribuída
+- **Health Checks**: Liveness, Readiness, Metrics
 
 ## 🏗️ Arquitetura
 
@@ -129,8 +158,16 @@ api.nestjs/
 │   │   │   ├── jwt-auth.guard.ts
 │   │   │   ├── roles.guard.ts
 │   │   │   └── index.ts
-│   │   ├── database/             # Configuração de banco
-│   │   │   └── prisma.service.ts
+│   │   ├── database/             # 💾 Configuração de banco
+│   │   │   ├── database.module.ts
+│   │   │   ├── prisma.service.ts
+│   │   │   └── index.ts
+│   │   ├── observability/        # 📊 Telemetria e Monitoramento
+│   │   │   ├── telemetry.service.ts
+│   │   │   ├── logger.service.ts
+│   │   │   ├── metrics.service.ts
+│   │   │   ├── observability.module.ts
+│   │   │   └── index.ts
 │   │   ├── prisma/               # Prisma ORM
 │   │   │   ├── schema.prisma
 │   │   │   ├── migrations/
@@ -149,6 +186,10 @@ api.nestjs/
 │   │   ├── filters/              # Filtros e Interceptors
 │   │   │   ├── all-exceptions.filter.ts
 │   │   │   └── response.interceptor.ts
+│   │   ├── observability/        # 📊 Health Checks e Logging
+│   │   │   ├── health.controller.ts
+│   │   │   ├── logging.interceptor.ts
+│   │   │   └── index.ts
 │   │   └── user/                 # Módulo de usuário
 │   │       ├── user.controller.ts
 │   │       └── user.module.ts
@@ -157,13 +198,295 @@ api.nestjs/
 │   └── main.ts                   # Bootstrap da aplicação
 │
 ├── docs/                         # Documentação
-│   └── AUTH_ARCHITECTURE.md      # Arquitetura de autenticação
+│   ├── AUTH_ARCHITECTURE.md      # Arquitetura de autenticação
+│   └── OBSERVABILITY.md          # Guia de observabilidade
+├── observability/                # Stack de monitoramento (opcional)
+│   ├── prometheus.yml
+│   └── README.md
 ├── test/                         # Testes E2E
 ├── .env.example                  # Variáveis de ambiente
+├── docker-compose.observability.yml  # Stack Jaeger/Prometheus/Grafana
 ├── prisma.config.ts              # Configuração do Prisma
 ├── package.json
 └── tsconfig.json
 ```
+
+## 📊 Observabilidade
+
+A aplicação implementa uma **camada completa de observabilidade** seguindo os princípios de **Clean Architecture** com **OpenTelemetry** para logs, métricas e traces distribuídos.
+
+### 🏗️ Arquitetura de Observabilidade
+
+```
+src/
+├── application/observability/       # 🔷 INTERFACES (Contratos)
+│   ├── logger.interface.ts              → ILogger + LOGGER token
+│   ├── metrics.interface.ts             → IMetrics + METRICS token
+│   ├── telemetry.interface.ts           → ITelemetry + TELEMETRY token
+│   └── index.ts
+│
+├── infrastructure/observability/    # 🔧 IMPLEMENTAÇÕES (OpenTelemetry)
+│   ├── observability.module.ts          → Módulo global com DI tokens
+│   ├── logger.service.ts                → implements ILogger
+│   ├── metrics.service.ts               → implements IMetrics
+│   ├── telemetry.service.ts             → implements ITelemetry
+│   └── index.ts
+│
+└── presentation/observability/      # 📡 HTTP Layer
+    ├── health.controller.ts             → Health checks
+    ├── logging.interceptor.ts           → HTTP request/response logging
+    └── index.ts
+```
+
+### ✨ Recursos Disponíveis
+
+#### 1. 📝 Logs Estruturados (OpenTelemetry Logs API)
+- **Console colorido** com timestamps (sempre ativo para desenvolvimento)
+- **OpenTelemetry logs** exportados via OTLP (quando `OTEL_ENABLED=true`)
+- **Sanitização automática** de dados sensíveis (password, token, secret)
+- **Níveis configuráveis**: error, warn, info, debug, verbose
+- **Contexto rico**: cada log possui contexto (HTTP, Auth, Database, etc)
+
+**Exemplo de log:**
+```
+[2025-10-29T01:19:30.525Z] [LOG] [HTTP] Incoming request: GET /health
+[2025-10-29T01:19:30.526Z] [LOG] [HTTP] Response: GET /health 200 - 1ms
+```
+
+#### 2. 📈 Métricas (OpenTelemetry Metrics API)
+- `http_requests_total` - Contador total de requisições HTTP
+- `http_errors_total` - Contador de erros HTTP
+- `http_request_duration_ms` - Histograma de latência de requisições
+
+**Labels automáticos:**
+- `method` - Método HTTP (GET, POST, PUT, DELETE)
+- `route` - Rota acessada
+- `status` - Status code da resposta
+
+#### 3. 🔍 Traces Distribuídos (OpenTelemetry Tracing)
+- **Auto-instrumentação** para HTTP, Express, Prisma e bibliotecas Node.js
+- **Exportação OTLP** para Jaeger, Grafana Cloud, Tempo, DataDog, etc
+- **Context propagation** automático entre serviços
+- **Ignorar health checks** (configurável)
+
+#### 4. 🏥 Health Checks
+
+| Endpoint | Descrição | Autenticação |
+|----------|-----------|--------------|
+| `GET /health` | Liveness probe (aplicação rodando) | Público |
+| `GET /health/ready` | Readiness probe (banco conectado) | Público |
+| `GET /health/metrics` | Métricas do sistema (memória, CPU, uptime) | Público |
+
+**Exemplo de resposta:**
+```json
+{
+  "data": {
+    "status": "ok",
+    "timestamp": "2025-10-29T01:19:30.525Z",
+    "uptime": 5.080140125
+  }
+}
+```
+
+### 🚀 Configuração Rápida
+
+#### 1. **Configurar variáveis de ambiente** (`.env`):
+
+```bash
+# Habilitar OpenTelemetry (opcional, padrão: desabilitado)
+OTEL_ENABLED=true
+
+# Service name para telemetria
+SERVICE_NAME=dark-api
+
+# Endpoints OTLP (opcional, padrão: localhost:4318)
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4318/v1/traces
+OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics
+OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://localhost:4318/v1/logs
+```
+
+#### 2. **(Opcional) Iniciar stack de visualização**:
+
+```bash
+# Subir Jaeger, Prometheus e Grafana
+docker-compose -f docker-compose.observability.yml up -d
+```
+
+#### 3. **Acessar interfaces**:
+
+- 🔍 **Jaeger** (Traces): http://localhost:16686
+- 📊 **Prometheus** (Métricas): http://localhost:9090
+- 📈 **Grafana** (Dashboards): http://localhost:3001 (admin/admin)
+
+### 💡 Uso em Código
+
+#### Injeção de Dependências com Tokens
+
+```typescript
+import { Inject, Injectable } from '@nestjs/common';
+import type { ILogger, IMetrics } from '../../application/observability';
+import { LOGGER, METRICS } from '../../application/observability';
+
+@Injectable()
+export class UserService {
+  constructor(
+    @Inject(LOGGER) private readonly logger: ILogger,
+    @Inject(METRICS) private readonly metrics: IMetrics,
+  ) {}
+
+  async createUser(data: CreateUserDto) {
+    // Log estruturado
+    this.logger.info('Creating user', 'UserService', { 
+      email: data.email 
+    });
+
+    const user = await this.repository.create(data);
+
+    // Log com contexto
+    this.logger.info('User created successfully', 'UserService', { 
+      userId: user.id 
+    });
+
+    // Métrica customizada
+    this.metrics.incrementCounter('users_created_total', 1);
+
+    return user;
+  }
+}
+```
+
+#### Métodos Disponíveis
+
+**ILogger:**
+```typescript
+// Métodos padrão do NestJS
+logger.log(message, context?)
+logger.error(message, trace?, context?)
+logger.warn(message, context?)
+logger.debug(message, context?)
+logger.verbose(message, context?)
+
+// Métodos customizados
+logger.info(message, context?, metadata?)
+logger.logRequest(method, url, statusCode, responseTime)
+logger.logAuth(userId, email, action)
+logger.logDatabase(operation, table, duration)
+logger.logError(error, context?)
+```
+
+**IMetrics:**
+```typescript
+metrics.incrementRequestCount(method, route, statusCode)
+metrics.incrementErrorCount(method, route, statusCode)
+metrics.recordRequestDuration(method, route, duration)
+```
+
+**ITelemetry:**
+```typescript
+await telemetry.shutdown() // Desligar SDK gracefully
+```
+
+### 🎯 Princípios de Design
+
+#### Clean Architecture
+- ✅ **Application Layer**: Interfaces puras (contratos)
+- ✅ **Infrastructure Layer**: Implementações com OpenTelemetry
+- ✅ **Dependency Inversion**: Código depende de abstrações, não implementações
+
+#### SOLID
+- ✅ **Single Responsibility**: Cada serviço tem uma responsabilidade clara
+- ✅ **Open/Closed**: Fácil adicionar novas implementações (CloudWatch, Datadog)
+- ✅ **Liskov Substitution**: Interfaces substituíveis
+- ✅ **Interface Segregation**: Interfaces focadas e coesas
+- ✅ **Dependency Inversion**: Tokens de injeção desacoplam implementações
+
+#### Testabilidade
+```typescript
+// Testes com mocks ficam simples
+const mockLogger: ILogger = {
+  log: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  // ... outros métodos
+};
+
+const module = await Test.createTestingModule({
+  providers: [
+    UserService,
+    { provide: LOGGER, useValue: mockLogger },
+  ],
+}).compile();
+```
+
+### 📊 Logs Automáticos
+
+A aplicação possui um **LoggingInterceptor** global que captura automaticamente:
+
+- ✅ Todas as requisições HTTP (método, URL, corpo)
+- ✅ Todas as respostas (status code, tempo de resposta)
+- ✅ Todos os erros (stack trace, contexto)
+- ✅ Métricas de cada request (contadores e histogramas)
+
+**Exemplo de saída:**
+```
+[2025-10-29T01:19:30.525Z] [LOG] [HTTP] Incoming request: GET /api/users
+{
+  "body": {}
+}
+[2025-10-29T01:19:30.530Z] [LOG] [HTTP] Response: GET /api/users 200 - 5ms
+```
+
+### 🔧 Customização
+
+#### Adicionar Novo Logger Provider
+
+```typescript
+// 1. Criar implementação (infrastructure/observability/)
+@Injectable()
+export class CloudWatchLogger implements ILogger {
+  log(message: string, context?: string) {
+    // Implementação customizada
+  }
+  // ... outros métodos
+}
+
+// 2. Registrar no ObservabilityModule
+{
+  provide: LOGGER,
+  useClass: CloudWatchLogger, // Trocar implementação
+}
+```
+
+#### Adicionar Novas Métricas
+
+```typescript
+// Adicionar na interface (application/observability/metrics.interface.ts)
+export interface IMetrics {
+  // ... métricas existentes
+  recordDatabaseQueryDuration(query: string, duration: number): void;
+}
+
+// Implementar (infrastructure/observability/metrics.service.ts)
+@Injectable()
+export class MetricsService implements IMetrics {
+  private dbQueryDuration = this.meter.createHistogram('db_query_duration_ms');
+
+  recordDatabaseQueryDuration(query: string, duration: number) {
+    this.dbQueryDuration.record(duration, { query });
+  }
+}
+```
+
+### � Documentação Completa
+
+Para detalhes completos sobre observabilidade, incluindo:
+- Configuração do Docker Compose
+- Integração com Jaeger, Prometheus e Grafana
+- Dashboards customizados
+- Troubleshooting
+- Boas práticas
+
+**📖 Consulte**: [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)
 
 ## 🚀 Instalação
 
@@ -1193,11 +1516,8 @@ curl http://localhost:3000/api/users/<seu-id> \
    - Agora todos os endpoints protegidos funcionarão!
 
 ## 📚 Documentação Adicional
-```
 
-## � Documentação Adicional
-
-Para entender em profundidade a arquitetura de autenticação, consulte:
+Para entender em profundidade as arquiteturas implementadas:
 
 - **[docs/AUTH_ARCHITECTURE.md](docs/AUTH_ARCHITECTURE.md)** - Arquitetura completa do sistema de autenticação
   - Estrutura organizada por camadas
@@ -1205,20 +1525,52 @@ Para entender em profundidade a arquitetura de autenticação, consulte:
   - Sistema de roles detalhado
   - Padrões e boas práticas aplicados
 
-## �🚀 Próximos Passos
+- **[docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)** - Arquitetura completa de observabilidade
+  - OpenTelemetry (Logs, Métricas, Traces)
+  - Configuração Docker Compose
+  - Integração com Jaeger, Prometheus, Grafana
+  - Clean Architecture aplicada
+  - Padrões SOLID e DI com tokens
 
-- [x] **Implementar soft delete** ✨
-- [x] **Implementar autenticação JWT** ✨
+- **[docs/OBSERVABILITY_INTERFACES.md](docs/OBSERVABILITY_INTERFACES.md)** - Refatoração com interfaces
+  - Interface segregation pattern
+  - Dependency Inversion Principle
+  - Testabilidade e mocks
+  - Exemplos práticos
+
+## 🚀 Próximos Passos
+
+### ✅ Funcionalidades Implementadas
+- [x] **Clean Architecture em 4 camadas** ✨
+- [x] **Soft delete com recuperação** ✨
+- [x] **Autenticação JWT** ✨
 - [x] **Sistema de roles (RBAC)** ✨
-- [ ] Adicionar refresh tokens
-- [ ] Implementar rate limiting
-- [ ] Adicionar testes unitários e E2E
-- [ ] Implementar paginação
-- [ ] Adicionar filtros e ordenação
-- [ ] Implementar cache com Redis
-- [ ] Adicionar logging estruturado
-- [ ] CI/CD com GitHub Actions
-- [ ] Containerização com Docker
+- [x] **Observabilidade completa (OpenTelemetry)** ✨
+  - [x] Logs estruturados com contexto
+  - [x] Métricas (HTTP requests, errors, latency)
+  - [x] Traces distribuídos
+  - [x] Health checks (liveness, readiness, metrics)
+- [x] **Arquitetura de observabilidade com interfaces** ✨
+- [x] **Dependency Injection com tokens (SOLID)** ✨
+- [x] **Documentação Swagger integrada** ✨
+- [x] **Tratamento global de erros** ✨
+- [x] **Validação automática de DTOs** ✨
+
+### 🎯 Melhorias Planejadas
+- [ ] **Refresh tokens** para renovação de JWT
+- [ ] **Rate limiting** com @nestjs/throttler
+- [ ] **Testes unitários** completos (>80% coverage)
+- [ ] **Testes E2E** com autenticação
+- [ ] **Paginação** com cursor ou offset
+- [ ] **Filtros e ordenação** avançados
+- [ ] **Cache Redis** para performance
+- [ ] **Audit log** de ações críticas
+- [ ] **CI/CD** com GitHub Actions
+- [ ] **Docker** para containerização
+- [ ] **Kubernetes** manifests
+- [ ] **Database migrations** versionadas
+- [ ] **Backup automatizado** do banco
+- [ ] **Monitoramento APM** (Application Performance Monitoring)
 
 ## 📄 Licença
 
