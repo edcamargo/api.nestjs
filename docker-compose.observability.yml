@@ -8,14 +8,14 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: dark-api-otel-collector
-    command: ["--config=/etc/otel-collector-config.yml"]
+    command: [ "--config=/etc/otel-collector-config.yml" ]
     volumes:
       - ./observability/otel-collector-config.yml:/etc/otel-collector-config.yml
     ports:
-      - "4318:4318"   # OTLP HTTP receiver
-      - "4317:4317"   # OTLP gRPC receiver
-      - "8888:8888"   # Prometheus metrics exposed by the collector
-      - "8889:8889"   # Prometheus exporter metrics
+      - "4318:4318" # OTLP HTTP receiver
+      - "4317:4317" # OTLP gRPC receiver
+      - "8888:8888" # Prometheus metrics exposed by the collector
+      - "8889:8889" # Prometheus exporter metrics
     networks:
       - observability
 
@@ -26,8 +26,8 @@ services:
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     ports:
-      - "16686:16686"  # Jaeger UI
-      - "14250:14250"  # gRPC
+      - "16686:16686" # Jaeger UI
+      - "14250:14250" # gRPC
     networks:
       - observability
 

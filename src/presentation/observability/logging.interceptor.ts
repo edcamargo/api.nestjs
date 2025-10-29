@@ -15,7 +15,7 @@ export class LoggingInterceptor implements NestInterceptor {
   constructor(
     @Inject(LOGGER) private readonly logger: ILogger,
     @Inject(METRICS) private readonly metrics: IMetrics,
-  ) {}
+  ) { }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();

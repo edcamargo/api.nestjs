@@ -25,4 +25,4 @@ import { LOGGER, METRICS, TELEMETRY } from '../../application/observability';
   ],
   exports: [LOGGER, METRICS, TELEMETRY, TelemetryService, LoggerService, MetricsService],
 })
-export class ObservabilityModule {}
+export class ObservabilityModule { }

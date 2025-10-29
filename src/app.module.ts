@@ -21,4 +21,4 @@ import { LoggingInterceptor, HealthController } from "./presentation/observabili
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
