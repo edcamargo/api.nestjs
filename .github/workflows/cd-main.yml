@@ -40,69 +40,70 @@ jobs:
           DATABASE_URL: 'file:./production.db'
         run: npx prisma migrate deploy
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+      # Docker steps disabled - uncomment when Docker Hub credentials are configured
+      # - name: Login to Docker Hub
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v3
 
-      - name: Extract version
-        id: version
-        run: echo "version=$(date +'%Y.%m.%d')-${{ github.run_number }}" >> $GITHUB_OUTPUT
+      # - name: Extract version
+      #   id: version
+      #   run: echo "version=$(date +'%Y.%m.%d')-${{ github.run_number }}" >> $GITHUB_OUTPUT
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-api:latest
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-api:${{ github.sha }}
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-api:v${{ steps.version.outputs.version }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nestjs-api:latest
-          cache-to: type=inline
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     push: true
+      #     tags: |
+      #       ${{ secrets.DOCKER_USERNAME }}/nestjs-api:latest
+      #       ${{ secrets.DOCKER_USERNAME }}/nestjs-api:${{ github.sha }}
+      #       ${{ secrets.DOCKER_USERNAME }}/nestjs-api:v${{ steps.version.outputs.version }}
+      #     cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nestjs-api:latest
+      #     cache-to: type=inline
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          release_name: Release v${{ steps.version.outputs.version }}
-          body: |
-            ## 🚀 Production Release v${{ steps.version.outputs.version }}
-            
-            ### Commit
-            - SHA: ${{ github.sha }}
-            - Author: ${{ github.actor }}
-            - Message: ${{ github.event.head_commit.message }}
-            
-            ### Docker Images
-            - `${{ secrets.DOCKER_USERNAME }}/nestjs-api:latest`
-            - `${{ secrets.DOCKER_USERNAME }}/nestjs-api:v${{ steps.version.outputs.version }}`
-            - `${{ secrets.DOCKER_USERNAME }}/nestjs-api:${{ github.sha }}`
-            
-            ### Deployment
-            - Environment: Production
-            - Date: ${{ github.event.head_commit.timestamp }}
-          draft: false
-          prerelease: false
+      # - name: Create GitHub Release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: v${{ steps.version.outputs.version }}
+      #     release_name: Release v${{ steps.version.outputs.version }}
+      #     body: |
+      #       ## 🚀 Production Release v${{ steps.version.outputs.version }}
+      #       
+      #       ### Commit
+      #       - SHA: ${{ github.sha }}
+      #       - Author: ${{ github.actor }}
+      #       - Message: ${{ github.event.head_commit.message }}
+      #       
+      #       ### Docker Images
+      #       - `${{ secrets.DOCKER_USERNAME }}/nestjs-api:latest`
+      #       - `${{ secrets.DOCKER_USERNAME }}/nestjs-api:v${{ steps.version.outputs.version }}`
+      #       - `${{ secrets.DOCKER_USERNAME }}/nestjs-api:${{ github.sha }}`
+      #       
+      #       ### Deployment
+      #       - Environment: Production
+      #       - Date: ${{ github.event.head_commit.timestamp }}
+      #     draft: false
+      #     prerelease: false
 
       - name: Deploy summary
         run: |
           echo "### 🎉 Production Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version**: v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: Production" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: main" >> $GITHUB_STEP_SUMMARY
           echo "- **Author**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Docker Image**: ${{ secrets.DOCKER_USERNAME }}/nestjs-api:latest" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Release created successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Docker build disabled - configure DOCKER_USERNAME and DOCKER_TOKEN secrets to enable" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build completed successfully!" >> $GITHUB_STEP_SUMMARY
 
       # Uncomment if you want Slack notifications
       # - name: Notify deployment
