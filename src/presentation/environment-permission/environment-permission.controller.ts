@@ -31,7 +31,7 @@ import { UserRole } from "../../domain/user/user.entity";
 export class EnvironmentPermissionController {
   constructor(
     private readonly environmentPermissionService: EnvironmentPermissionService,
-  ) {}
+  ) { }
 
   @Post()
   @Roles(UserRole.ADMIN)

@@ -29,7 +29,7 @@ RUN apk add --no-cache dumb-init
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+  adduser -S nodejs -u 1001
 
 # Copy package files
 COPY package*.json ./
@@ -37,7 +37,7 @@ COPY prisma ./prisma/
 
 # Install production dependencies only
 RUN npm ci --only=production && \
-    npm cache clean --force
+  npm cache clean --force
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist

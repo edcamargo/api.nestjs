@@ -36,7 +36,7 @@ import { UserRole } from "../../domain/user/user.entity";
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth("JWT-auth")
 export class UserController {
-  constructor(private readonly service: UserService) {}
+  constructor(private readonly service: UserService) { }
 
   @Public()
   @Post()

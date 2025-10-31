@@ -8,7 +8,7 @@ import {
 
 @Injectable()
 export class RoleAssignmentRepository implements IRoleAssignmentRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(assignment: RoleAssignment): Promise<RoleAssignment> {
     const created = await this.prisma.roleAssignment.create({

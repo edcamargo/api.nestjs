@@ -10,8 +10,7 @@ import { Request } from "express";
 
 @Injectable()
 export class ResponseInterceptor<T>
-  implements NestInterceptor<T, { data: T } | T>
-{
+  implements NestInterceptor<T, { data: T } | T> {
   intercept(
     context: ExecutionContext,
     next: CallHandler<T>,

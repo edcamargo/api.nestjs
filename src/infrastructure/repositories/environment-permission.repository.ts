@@ -8,9 +8,8 @@ import {
 
 @Injectable()
 export class EnvironmentPermissionRepository
-  implements IEnvironmentPermissionRepository
-{
-  constructor(private readonly prisma: PrismaService) {}
+  implements IEnvironmentPermissionRepository {
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(
     permission: EnvironmentPermission,
