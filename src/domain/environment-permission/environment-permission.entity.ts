@@ -1,8 +1,8 @@
 export enum PermittedAction {
-  READ = 'READ',
-  WRITE = 'WRITE',
-  DELETE = 'DELETE',
-  EXECUTE = 'EXECUTE',
+  READ = "READ",
+  WRITE = "WRITE",
+  DELETE = "DELETE",
+  EXECUTE = "EXECUTE",
 }
 
 export class EnvironmentPermission {
@@ -15,18 +15,18 @@ export class EnvironmentPermission {
     public createdAt: Date,
     public updatedAt: Date,
     public deletedAt?: Date | null,
-  ) { }
+  ) {}
 
   canPerformAction(action: PermittedAction): boolean {
     return this.permittedActions.includes(action);
   }
 
   hasAllActions(actions: PermittedAction[]): boolean {
-    return actions.every(action => this.permittedActions.includes(action));
+    return actions.every((action) => this.permittedActions.includes(action));
   }
 
   hasAnyAction(actions: PermittedAction[]): boolean {
-    return actions.some(action => this.permittedActions.includes(action));
+    return actions.some((action) => this.permittedActions.includes(action));
   }
 
   isDeleted(): boolean {

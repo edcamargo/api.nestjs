@@ -1,5 +1,5 @@
-import { Role } from '../../domain/role/role.entity';
-import { RoleResponseDto } from '../dtos/role-response.dto';
+import { Role } from "../../domain/role/role.entity";
+import { RoleResponseDto } from "../dtos/role-response.dto";
 
 export class RoleMapper {
   static toResponse(role: Role): RoleResponseDto {
@@ -15,6 +15,6 @@ export class RoleMapper {
   }
 
   static toResponseArray(roles: Role[]): RoleResponseDto[] {
-    return roles.map(role => this.toResponse(role));
+    return roles.map((role) => this.toResponse(role));
   }
 }

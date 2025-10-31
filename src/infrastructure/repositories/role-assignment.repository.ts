@@ -1,11 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
-import { IRoleAssignmentRepository } from '../../domain/interfaces/role-assignment.repository';
-import { RoleAssignment, RoleAssignmentState } from '../../domain/role-assignment/role-assignment.entity';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../database/prisma.service";
+import { IRoleAssignmentRepository } from "../../domain/interfaces/role-assignment.repository";
+import {
+  RoleAssignment,
+  RoleAssignmentState,
+} from "../../domain/role-assignment/role-assignment.entity";
 
 @Injectable()
 export class RoleAssignmentRepository implements IRoleAssignmentRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(assignment: RoleAssignment): Promise<RoleAssignment> {
     const created = await this.prisma.roleAssignment.create({
@@ -30,10 +33,13 @@ export class RoleAssignmentRepository implements IRoleAssignmentRepository {
       where: includeDeleted ? {} : { deletedAt: null },
     });
 
-    return assignments.map(assignment => this.toDomain(assignment));
+    return assignments.map((assignment) => this.toDomain(assignment));
   }
 
-  async findById(id: string, includeDeleted = false): Promise<RoleAssignment | null> {
+  async findById(
+    id: string,
+    includeDeleted = false,
+  ): Promise<RoleAssignment | null> {
     const assignment = await this.prisma.roleAssignment.findUnique({
       where: { id },
     });
@@ -45,7 +51,10 @@ export class RoleAssignmentRepository implements IRoleAssignmentRepository {
     return this.toDomain(assignment);
   }
 
-  async findByUserId(userId: string, includeDeleted = false): Promise<RoleAssignment[]> {
+  async findByUserId(
+    userId: string,
+    includeDeleted = false,
+  ): Promise<RoleAssignment[]> {
     const assignments = await this.prisma.roleAssignment.findMany({
       where: {
         userId,
@@ -53,7 +62,7 @@ export class RoleAssignmentRepository implements IRoleAssignmentRepository {
       },
     });
 
-    return assignments.map(assignment => this.toDomain(assignment));
+    return assignments.map((assignment) => this.toDomain(assignment));
   }
 
   async findActiveByUserId(userId: string): Promise<RoleAssignment[]> {
@@ -64,17 +73,17 @@ export class RoleAssignmentRepository implements IRoleAssignmentRepository {
         state: RoleAssignmentState.ACTIVE,
         deletedAt: null,
         startDate: { lte: now },
-        OR: [
-          { endDate: null },
-          { endDate: { gte: now } },
-        ],
+        OR: [{ endDate: null }, { endDate: { gte: now } }],
       },
     });
 
-    return assignments.map(assignment => this.toDomain(assignment));
+    return assignments.map((assignment) => this.toDomain(assignment));
   }
 
-  async findByGrantedBy(grantedBy: string, includeDeleted = false): Promise<RoleAssignment[]> {
+  async findByGrantedBy(
+    grantedBy: string,
+    includeDeleted = false,
+  ): Promise<RoleAssignment[]> {
     const assignments = await this.prisma.roleAssignment.findMany({
       where: {
         grantedBy,
@@ -82,10 +91,13 @@ export class RoleAssignmentRepository implements IRoleAssignmentRepository {
       },
     });
 
-    return assignments.map(assignment => this.toDomain(assignment));
+    return assignments.map((assignment) => this.toDomain(assignment));
   }
 
-  async update(id: string, assignmentData: Partial<RoleAssignment>): Promise<RoleAssignment> {
+  async update(
+    id: string,
+    assignmentData: Partial<RoleAssignment>,
+  ): Promise<RoleAssignment> {
     const data: any = { ...assignmentData };
 
     if (assignmentData.roles) {
@@ -93,7 +105,9 @@ export class RoleAssignmentRepository implements IRoleAssignmentRepository {
     }
 
     if (assignmentData.accessEnvironments) {
-      data.accessEnvironments = JSON.stringify(assignmentData.accessEnvironments);
+      data.accessEnvironments = JSON.stringify(
+        assignmentData.accessEnvironments,
+      );
     }
 
     delete data.id;

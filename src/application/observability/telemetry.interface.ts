@@ -8,4 +8,4 @@ export interface ITelemetry {
 /**
  * Token de injeção para o TelemetryService
  */
-export const TELEMETRY = Symbol('TELEMETRY');
+export const TELEMETRY = Symbol("TELEMETRY");

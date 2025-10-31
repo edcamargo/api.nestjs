@@ -1,8 +1,8 @@
-import { Global, Module } from '@nestjs/common';
-import { TelemetryService } from './telemetry.service';
-import { LoggerService } from './logger.service';
-import { MetricsService } from './metrics.service';
-import { LOGGER, METRICS, TELEMETRY } from '../../application/observability';
+import { Global, Module } from "@nestjs/common";
+import { TelemetryService } from "./telemetry.service";
+import { LoggerService } from "./logger.service";
+import { MetricsService } from "./metrics.service";
+import { LOGGER, METRICS, TELEMETRY } from "../../application/observability";
 
 @Global()
 @Module({
@@ -23,6 +23,13 @@ import { LOGGER, METRICS, TELEMETRY } from '../../application/observability';
       useClass: TelemetryService,
     },
   ],
-  exports: [LOGGER, METRICS, TELEMETRY, TelemetryService, LoggerService, MetricsService],
+  exports: [
+    LOGGER,
+    METRICS,
+    TELEMETRY,
+    TelemetryService,
+    LoggerService,
+    MetricsService,
+  ],
 })
-export class ObservabilityModule { }
+export class ObservabilityModule {}

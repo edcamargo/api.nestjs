@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { UserResponseDto } from './user-response.dto';
-import { PaginationMetaDto } from './pagination-meta.dto';
+import { ApiProperty } from "@nestjs/swagger";
+import { UserResponseDto } from "./user-response.dto";
+import { PaginationMetaDto } from "./pagination-meta.dto";
 
 export class PagedUserResponseDto {
   @ApiProperty({ type: [UserResponseDto] })

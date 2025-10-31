@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { RoleAssignmentController } from '../../../../src/presentation/role-assignment/role-assignment.controller';
-import { RoleAssignmentService } from '../../../../src/application/services/role-assignment.service';
-import { CreateRoleAssignmentDto } from '../../../../src/application/dtos/create-role-assignment.dto';
-import { UpdateRoleAssignmentDto } from '../../../../src/application/dtos/update-role-assignment.dto';
+import { Test, TestingModule } from "@nestjs/testing";
+import { NotFoundException } from "@nestjs/common";
+import { RoleAssignmentController } from "../../../../src/presentation/role-assignment/role-assignment.controller";
+import { RoleAssignmentService } from "../../../../src/application/services/role-assignment.service";
+import { CreateRoleAssignmentDto } from "../../../../src/application/dtos/create-role-assignment.dto";
+import { UpdateRoleAssignmentDto } from "../../../../src/application/dtos/update-role-assignment.dto";
 
-describe('RoleAssignmentController (unit)', () => {
+describe("RoleAssignmentController (unit)", () => {
   let controller: RoleAssignmentController;
   let mockService: jest.Mocked<RoleAssignmentService>;
 
@@ -39,23 +39,23 @@ describe('RoleAssignmentController (unit)', () => {
     jest.clearAllMocks();
   });
 
-  describe('findAll', () => {
-    it('should return all role assignments without deleted ones by default', async () => {
+  describe("findAll", () => {
+    it("should return all role assignments without deleted ones by default", async () => {
       const mockAssignments = [
         {
-          id: '1',
-          userId: 'user1',
-          roleId: 'role1',
-          environmentPermissionId: 'perm1',
-          expiresAt: new Date('2024-12-31'),
+          id: "1",
+          userId: "user1",
+          roleId: "role1",
+          environmentPermissionId: "perm1",
+          expiresAt: new Date("2024-12-31"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
-          id: '2',
-          userId: 'user2',
-          roleId: 'role2',
-          environmentPermissionId: 'perm2',
+          id: "2",
+          userId: "user2",
+          roleId: "role2",
+          environmentPermissionId: "perm2",
           expiresAt: null,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -70,22 +70,22 @@ describe('RoleAssignmentController (unit)', () => {
       expect(mockService.findAll).toHaveBeenCalledWith(false);
     });
 
-    it('should include deleted role assignments when specified', async () => {
+    it("should include deleted role assignments when specified", async () => {
       const mockAssignments = [
         {
-          id: '1',
-          userId: 'user1',
-          roleId: 'role1',
-          environmentPermissionId: 'perm1',
-          expiresAt: new Date('2024-12-31'),
+          id: "1",
+          userId: "user1",
+          roleId: "role1",
+          environmentPermissionId: "perm1",
+          expiresAt: new Date("2024-12-31"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
-          id: '2',
-          userId: 'user2',
-          roleId: 'role2',
-          environmentPermissionId: 'perm2',
+          id: "2",
+          userId: "user2",
+          roleId: "role2",
+          environmentPermissionId: "perm2",
           expiresAt: null,
           deletedAt: new Date(),
           createdAt: new Date(),
@@ -95,31 +95,31 @@ describe('RoleAssignmentController (unit)', () => {
 
       mockService.findAll.mockResolvedValue(mockAssignments as any);
 
-      const result = await controller.findAll('true');
+      const result = await controller.findAll("true");
 
       expect(result.data).toHaveLength(2);
       expect(mockService.findAll).toHaveBeenCalledWith(true);
     });
   });
 
-  describe('findByUserId', () => {
-    it('should return all role assignments for a specific user', async () => {
-      const userId = 'user1';
+  describe("findByUserId", () => {
+    it("should return all role assignments for a specific user", async () => {
+      const userId = "user1";
       const mockAssignments = [
         {
-          id: '1',
+          id: "1",
           userId: userId,
-          roleId: 'role1',
-          environmentPermissionId: 'perm1',
-          expiresAt: new Date('2024-12-31'),
+          roleId: "role1",
+          environmentPermissionId: "perm1",
+          expiresAt: new Date("2024-12-31"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
-          id: '2',
+          id: "2",
           userId: userId,
-          roleId: 'role2',
-          environmentPermissionId: 'perm2',
+          roleId: "role2",
+          environmentPermissionId: "perm2",
           expiresAt: null,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -135,16 +135,16 @@ describe('RoleAssignmentController (unit)', () => {
     });
   });
 
-  describe('findActiveByUserId', () => {
-    it('should return only active role assignments for a specific user', async () => {
-      const userId = 'user1';
+  describe("findActiveByUserId", () => {
+    it("should return only active role assignments for a specific user", async () => {
+      const userId = "user1";
       const mockAssignments = [
         {
-          id: '1',
+          id: "1",
           userId: userId,
-          roleId: 'role1',
-          environmentPermissionId: 'perm1',
-          expiresAt: new Date('2025-12-31'),
+          roleId: "role1",
+          environmentPermissionId: "perm1",
+          expiresAt: new Date("2025-12-31"),
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -158,8 +158,8 @@ describe('RoleAssignmentController (unit)', () => {
       expect(mockService.findActiveByUserId).toHaveBeenCalledWith(userId);
     });
 
-    it('should return empty array when user has no active assignments', async () => {
-      const userId = 'user1';
+    it("should return empty array when user has no active assignments", async () => {
+      const userId = "user1";
 
       mockService.findActiveByUserId.mockResolvedValue([]);
 
@@ -170,15 +170,15 @@ describe('RoleAssignmentController (unit)', () => {
     });
   });
 
-  describe('findById', () => {
-    it('should return a role assignment by id', async () => {
-      const assignmentId = '1';
+  describe("findById", () => {
+    it("should return a role assignment by id", async () => {
+      const assignmentId = "1";
       const mockAssignment = {
         id: assignmentId,
-        userId: 'user1',
-        roleId: 'role1',
-        environmentPermissionId: 'perm1',
-        expiresAt: new Date('2024-12-31'),
+        userId: "user1",
+        roleId: "role1",
+        environmentPermissionId: "perm1",
+        expiresAt: new Date("2024-12-31"),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -191,26 +191,28 @@ describe('RoleAssignmentController (unit)', () => {
       expect(mockService.findById).toHaveBeenCalledWith(assignmentId);
     });
 
-    it('should throw NotFoundException when assignment does not exist', async () => {
+    it("should throw NotFoundException when assignment does not exist", async () => {
       mockService.findById.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findById('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.findById("999")).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
-  describe('create', () => {
-    it('should create a new role assignment', async () => {
+  describe("create", () => {
+    it("should create a new role assignment", async () => {
       const dto: CreateRoleAssignmentDto = {
-        userId: 'user1',
-        roles: ['role1', 'role2'],
-        accessEnvironments: ['perm1'],
-        startDate: '2024-01-01',
-        endDate: '2024-12-31',
-        grantedBy: 'admin1',
+        userId: "user1",
+        roles: ["role1", "role2"],
+        accessEnvironments: ["perm1"],
+        startDate: "2024-01-01",
+        endDate: "2024-12-31",
+        grantedBy: "admin1",
       };
 
       const mockAssignment = {
-        id: '1',
+        id: "1",
         userId: dto.userId,
         roles: dto.roles,
         accessEnvironments: dto.accessEnvironments,
@@ -226,44 +228,46 @@ describe('RoleAssignmentController (unit)', () => {
       const result = await controller.create(dto);
 
       expect(result.data).toMatchObject({
-        id: '1',
+        id: "1",
         userId: dto.userId,
       });
       expect(mockService.create).toHaveBeenCalledWith(dto);
     });
 
-    it('should throw NotFoundException when user does not exist', async () => {
+    it("should throw NotFoundException when user does not exist", async () => {
       const dto: CreateRoleAssignmentDto = {
-        userId: 'nonexistent',
-        roles: ['role1'],
-        accessEnvironments: ['perm1'],
-        startDate: '2024-01-01',
-        grantedBy: 'admin1',
+        userId: "nonexistent",
+        roles: ["role1"],
+        accessEnvironments: ["perm1"],
+        startDate: "2024-01-01",
+        grantedBy: "admin1",
       };
 
-      mockService.create.mockRejectedValue(new NotFoundException('User not found'));
+      mockService.create.mockRejectedValue(
+        new NotFoundException("User not found"),
+      );
 
       await expect(controller.create(dto)).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('update', () => {
-    it('should update a role assignment', async () => {
-      const assignmentId = '1';
+  describe("update", () => {
+    it("should update a role assignment", async () => {
+      const assignmentId = "1";
       const dto: UpdateRoleAssignmentDto = {
-        endDate: '2025-12-31',
-        notes: 'Extended assignment',
+        endDate: "2025-12-31",
+        notes: "Extended assignment",
       };
 
       const mockAssignment = {
         id: assignmentId,
-        userId: 'user1',
-        roles: ['role1'],
-        accessEnvironments: ['perm1'],
-        startDate: new Date('2024-01-01'),
+        userId: "user1",
+        roles: ["role1"],
+        accessEnvironments: ["perm1"],
+        startDate: new Date("2024-01-01"),
         endDate: new Date(dto.endDate!),
         notes: dto.notes,
-        grantedBy: 'admin1',
+        grantedBy: "admin1",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -276,20 +280,22 @@ describe('RoleAssignmentController (unit)', () => {
       expect(mockService.update).toHaveBeenCalledWith(assignmentId, dto);
     });
 
-    it('should throw NotFoundException when assignment does not exist', async () => {
+    it("should throw NotFoundException when assignment does not exist", async () => {
       const dto: UpdateRoleAssignmentDto = {
-        endDate: '2025-12-31',
+        endDate: "2025-12-31",
       };
 
       mockService.update.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.update('999', dto)).rejects.toThrow(NotFoundException);
+      await expect(controller.update("999", dto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
-  describe('softDelete', () => {
-    it('should soft delete a role assignment', async () => {
-      const assignmentId = '1';
+  describe("softDelete", () => {
+    it("should soft delete a role assignment", async () => {
+      const assignmentId = "1";
 
       mockService.softDelete.mockResolvedValue(undefined);
 
@@ -298,16 +304,18 @@ describe('RoleAssignmentController (unit)', () => {
       expect(mockService.softDelete).toHaveBeenCalledWith(assignmentId);
     });
 
-    it('should throw NotFoundException when assignment does not exist', async () => {
+    it("should throw NotFoundException when assignment does not exist", async () => {
       mockService.softDelete.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.softDelete('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.softDelete("999")).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
-  describe('hardDelete', () => {
-    it('should permanently delete a role assignment', async () => {
-      const assignmentId = '1';
+  describe("hardDelete", () => {
+    it("should permanently delete a role assignment", async () => {
+      const assignmentId = "1";
 
       mockService.hardDelete.mockResolvedValue(undefined);
 
@@ -316,22 +324,24 @@ describe('RoleAssignmentController (unit)', () => {
       expect(mockService.hardDelete).toHaveBeenCalledWith(assignmentId);
     });
 
-    it('should throw NotFoundException when assignment does not exist', async () => {
+    it("should throw NotFoundException when assignment does not exist", async () => {
       mockService.hardDelete.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.hardDelete('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.hardDelete("999")).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
-  describe('restore', () => {
-    it('should restore a deleted role assignment', async () => {
-      const assignmentId = '1';
+  describe("restore", () => {
+    it("should restore a deleted role assignment", async () => {
+      const assignmentId = "1";
       const mockAssignment = {
         id: assignmentId,
-        userId: 'user1',
-        roleId: 'role1',
-        environmentPermissionId: 'perm1',
-        expiresAt: new Date('2024-12-31'),
+        userId: "user1",
+        roleId: "role1",
+        environmentPermissionId: "perm1",
+        expiresAt: new Date("2024-12-31"),
         deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -345,10 +355,12 @@ describe('RoleAssignmentController (unit)', () => {
       expect(mockService.restore).toHaveBeenCalledWith(assignmentId);
     });
 
-    it('should throw NotFoundException when assignment does not exist', async () => {
+    it("should throw NotFoundException when assignment does not exist", async () => {
       mockService.restore.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.restore('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.restore("999")).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

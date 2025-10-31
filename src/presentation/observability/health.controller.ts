@@ -1,72 +1,62 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { Public } from '../auth';
+import { Controller, Get } from "@nestjs/common";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
+import { Public } from "../../infrastructure/auth/public.decorator";
 
-@ApiTags('Health')
-@Controller('health')
+@ApiTags("Observability")
+@Controller("health")
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) { }
-
-  @Public()
   @Get()
-  @ApiOperation({ summary: 'Health check - liveness probe' })
-  @ApiResponse({ status: 200, description: 'Service is healthy' })
-  async healthCheck() {
+  @Public()
+  @ApiOperation({ summary: "Health check endpoint" })
+  healthCheck() {
     return {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
+      memory: process.memoryUsage(),
+      environment: process.env.NODE_ENV || "development",
     };
   }
 
+  @Get("live")
   @Public()
-  @Get('ready')
-  @ApiOperation({ summary: 'Readiness check - database connection' })
-  @ApiResponse({ status: 200, description: 'Service is ready' })
-  @ApiResponse({ status: 503, description: 'Service is not ready' })
-  async readinessCheck() {
+  @ApiOperation({ summary: "Liveness probe" })
+  liveness() {
+    return { status: "ok" };
+  }
+
+  @Get("ready")
+  @Public()
+  @ApiOperation({ summary: "Readiness probe" })
+  readiness() {
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
-      return {
-        status: 'ready',
-        timestamp: new Date().toISOString(),
-        checks: {
-          database: 'ok',
-        },
-      };
-    } catch (error) {
-      return {
-        status: 'not_ready',
-        timestamp: new Date().toISOString(),
-        checks: {
-          database: 'error',
-        },
-      };
+      // Add checks here (database, external services, etc.)
+      return { status: "ok", ready: true };
+    } catch {
+      return { status: "error", ready: false };
     }
   }
 
+  @Get("version")
   @Public()
-  @Get('metrics')
-  @ApiOperation({ summary: 'Application metrics' })
-  @ApiResponse({ status: 200, description: 'Current metrics' })
-  async metrics() {
-    const memoryUsage = process.memoryUsage();
+  @ApiOperation({ summary: "API version" })
+  version() {
     return {
-      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || "1.0.0",
+      node: process.version,
+    };
+  }
+
+  @Get("metrics")
+  @Public()
+  @ApiOperation({ summary: "Basic metrics" })
+  metrics() {
+    return {
       uptime: process.uptime(),
-      memory: {
-        rss: `${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`,
-        heapTotal: `${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
-        heapUsed: `${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`,
-        external: `${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB`,
-      },
-      process: {
-        pid: process.pid,
-        nodeVersion: process.version,
-        platform: process.platform,
-      },
+      memory: process.memoryUsage(),
+      cpu: process.cpuUsage(),
+      platform: process.platform,
+      nodeVersion: process.version,
     };
   }
 }

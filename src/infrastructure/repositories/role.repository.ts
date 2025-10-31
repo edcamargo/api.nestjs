@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
-import { IRoleRepository } from '../../domain/interfaces/role.repository';
-import { Role } from '../../domain/role/role.entity';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../database/prisma.service";
+import { IRoleRepository } from "../../domain/interfaces/role.repository";
+import { Role } from "../../domain/role/role.entity";
 
 @Injectable()
 export class RoleRepository implements IRoleRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(role: Role): Promise<Role> {
     const created = await this.prisma.role.create({
@@ -26,7 +26,7 @@ export class RoleRepository implements IRoleRepository {
       where: includeDeleted ? {} : { deletedAt: null },
     });
 
-    return roles.map(role => this.toDomain(role));
+    return roles.map((role) => this.toDomain(role));
   }
 
   async findById(id: string, includeDeleted = false): Promise<Role | null> {
@@ -61,7 +61,7 @@ export class RoleRepository implements IRoleRepository {
       },
     });
 
-    return roles.map(role => this.toDomain(role));
+    return roles.map((role) => this.toDomain(role));
   }
 
   async update(id: string, roleData: Partial<Role>): Promise<Role> {
