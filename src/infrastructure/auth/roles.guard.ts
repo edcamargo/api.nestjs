@@ -42,7 +42,9 @@ export class RolesGuard implements CanActivate {
     }
 
     const httpContext = context.switchToHttp();
-    const request = httpContext.getRequest();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const requestRaw = httpContext.getRequest();
+    const request = requestRaw as Request & { user?: IAuthenticatedUser };
     const user: IAuthenticatedUser | undefined = request.user;
 
     // If user is not set, authentication is required

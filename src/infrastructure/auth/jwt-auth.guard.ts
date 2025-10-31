@@ -35,7 +35,9 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
     // Support token from header, query params, or cookies
     try {
       const httpContext = context.switchToHttp();
-      const req = httpContext.getRequest();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const reqRaw = httpContext.getRequest();
+      const req = reqRaw as Request;
       const headers = req.headers;
 
       // Read from authorization header or x-access-token header
