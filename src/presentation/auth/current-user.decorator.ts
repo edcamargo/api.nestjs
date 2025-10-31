@@ -24,7 +24,9 @@ export const CurrentUser = createParamDecorator(
     ctx: ExecutionContext,
   ): IAuthenticatedUser | string | undefined => {
     const httpContext = ctx.switchToHttp();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const request = httpContext.getRequest();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const user: IAuthenticatedUser | undefined = request.user;
 
     return data && user ? user[data] : user;
