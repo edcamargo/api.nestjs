@@ -32,4 +32,4 @@ import { UserRepository } from "../../infrastructure/repositories/user.repositor
   ],
   exports: [AuthService, JwtStrategy, PassportModule, JwtModule],
 })
-export class AuthModule { }
+export class AuthModule {}

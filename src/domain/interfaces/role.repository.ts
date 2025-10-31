@@ -1,6 +1,6 @@
-import { Role } from '../role/role.entity';
+import { Role } from "../role/role.entity";
 
-export const ROLE_REPOSITORY = Symbol('ROLE_REPOSITORY');
+export const ROLE_REPOSITORY = Symbol("ROLE_REPOSITORY");
 
 export interface IRoleRepository {
   create(role: Role): Promise<Role>;

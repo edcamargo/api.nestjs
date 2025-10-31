@@ -1,8 +1,10 @@
-import { EnvironmentPermission } from '../../domain/environment-permission/environment-permission.entity';
-import { EnvironmentPermissionResponseDto } from '../dtos/environment-permission-response.dto';
+import { EnvironmentPermission } from "../../domain/environment-permission/environment-permission.entity";
+import { EnvironmentPermissionResponseDto } from "../dtos/environment-permission-response.dto";
 
 export class EnvironmentPermissionMapper {
-  static toResponse(permission: EnvironmentPermission): EnvironmentPermissionResponseDto {
+  static toResponse(
+    permission: EnvironmentPermission,
+  ): EnvironmentPermissionResponseDto {
     return {
       id: permission.id,
       name: permission.name,
@@ -14,7 +16,9 @@ export class EnvironmentPermissionMapper {
     };
   }
 
-  static toResponseArray(permissions: EnvironmentPermission[]): EnvironmentPermissionResponseDto[] {
-    return permissions.map(permission => this.toResponse(permission));
+  static toResponseArray(
+    permissions: EnvironmentPermission[],
+  ): EnvironmentPermissionResponseDto[] {
+    return permissions.map((permission) => this.toResponse(permission));
   }
 }

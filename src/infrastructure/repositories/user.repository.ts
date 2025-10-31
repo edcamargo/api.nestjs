@@ -5,7 +5,7 @@ import { PrismaService } from "../database/prisma.service";
 
 @Injectable()
 export class UserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private toDomain(entity: any): User {
     // adapta objeto do Prisma para a entidade de domínio
@@ -34,13 +34,17 @@ export class UserRepository implements IUserRepository {
     return this.toDomain(saved);
   }
 
-  async findAll(includeDeleted = false, page = 1, perPage = 10): Promise<User[]> {
+  async findAll(
+    includeDeleted = false,
+    page = 1,
+    perPage = 10,
+  ): Promise<User[]> {
     const skip = Math.max(0, page - 1) * Math.max(1, perPage);
     const entities = await this.prisma.user.findMany({
       where: includeDeleted ? {} : { deletedAt: null },
       skip,
       take: perPage,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return entities.map((e) => this.toDomain(e));
   }

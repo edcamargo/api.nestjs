@@ -1,7 +1,12 @@
-import { Injectable, ExecutionContext, UnauthorizedException } from "@nestjs/common";
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
+import type { Request } from "express";
 
 /**
  * JWT Authentication Guard
@@ -29,35 +34,46 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
 
     // Support token from header, query params, or cookies
     try {
-      const req = context.switchToHttp().getRequest();
-      const headers = req.headers || {};
+      const httpContext = context.switchToHttp();
+      const req = httpContext.getRequest();
+      const headers = req.headers;
 
       // Read from authorization header or x-access-token header
-      let header = headers.authorization || headers['x-access-token'];
-      if (Array.isArray(header)) header = header[0];
+      const authHeader = headers.authorization || headers["x-access-token"];
+      const headerToken: string | undefined = Array.isArray(authHeader)
+        ? authHeader[0]
+        : authHeader;
 
       // Also support tokens via query params or cookies
-      const q = req.query || {};
-      const qToken = q.authorization || q.access_token || q.token;
-      const c = req.cookies || {};
-      const cToken = c.authToken || c.token || c.access_token;
+      const q = req.query as Record<string, string | string[] | undefined>;
+      const qAuthToken = q.authorization || q.access_token || q.token;
+      const qToken: string | undefined = Array.isArray(qAuthToken)
+        ? qAuthToken[0]
+        : qAuthToken;
+
+      const cookies = req.cookies;
+      const cToken: string | undefined =
+        cookies?.authToken || cookies?.token || cookies?.access_token;
 
       // Prefer header, otherwise query, otherwise cookie
-      const rawToken = header || qToken || cToken;
+      const rawToken: string | undefined = headerToken || qToken || cToken;
 
-      if (rawToken && typeof rawToken === 'string') {
-        const trimmed = rawToken.trim().replace(/^Bearer\s+/i, '');
-        req.headers = req.headers || {};
+      if (rawToken && typeof rawToken === "string") {
+        const trimmed = rawToken.trim().replace(/^Bearer\s+/i, "");
         req.headers.authorization = `Bearer ${trimmed}`;
       }
-    } catch (e) {
+    } catch {
       // Ignore extraction errors and let passport handle missing token
     }
 
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, info: any) {
+  handleRequest<TUser = unknown>(
+    err: Error | null,
+    user: TUser | false,
+    info?: { message?: string },
+  ): TUser {
     if (err) {
       throw err;
     }

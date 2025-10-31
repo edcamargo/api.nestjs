@@ -1,27 +1,33 @@
-import { Controller, Get, Req, ForbiddenException } from '@nestjs/common';
-import type { Request } from 'express';
-import { Public } from '../auth/public.decorator';
+import { Controller, Get, Req } from "@nestjs/common";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
+import { Public } from "../../infrastructure/auth/public.decorator";
+import type { Request } from "express";
 
-/**
- * Temporary debug endpoint to inspect incoming request headers, query and cookies.
- * Enabled only when ENABLE_DEBUG_ENDPOINT=true to avoid accidental exposure.
- */
-@Controller('internal')
+@ApiTags("Debug")
+@Controller("debug")
 export class DebugController {
+  @Get("headers")
   @Public()
-  @Get('debug-headers')
-  debugHeaders(@Req() req: Request) {
-    if (process.env.ENABLE_DEBUG_ENDPOINT !== 'true') {
-      throw new ForbiddenException('Debug endpoint is disabled');
-    }
+  @ApiOperation({ summary: "Show request headers" })
+  getHeaders(@Req() req: Request) {
+    const cookies = req.cookies;
+    const rawHeaders = req.rawHeaders;
 
     return {
       headers: req.headers,
-      // Express normalized getter
-      authorization_get: typeof req.get === 'function' ? req.get('authorization') : undefined,
-      query: req.query,
-      cookies: (req as any).cookies ?? null,
-      rawHeaders: (req as any).rawHeaders ?? null,
+      cookies,
+      rawHeaders,
+    };
+  }
+
+  @Get("env")
+  @Public()
+  @ApiOperation({ summary: "Show environment info (non-sensitive)" })
+  getEnv() {
+    return {
+      nodeEnv: process.env.NODE_ENV,
+      platform: process.platform,
+      nodeVersion: process.version,
     };
   }
 }

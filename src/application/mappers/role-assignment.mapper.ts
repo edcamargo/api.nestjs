@@ -1,5 +1,5 @@
-import { RoleAssignment } from '../../domain/role-assignment/role-assignment.entity';
-import { RoleAssignmentResponseDto } from '../dtos/role-assignment-response.dto';
+import { RoleAssignment } from "../../domain/role-assignment/role-assignment.entity";
+import { RoleAssignmentResponseDto } from "../dtos/role-assignment-response.dto";
 
 export class RoleAssignmentMapper {
   static toResponse(assignment: RoleAssignment): RoleAssignmentResponseDto {
@@ -18,7 +18,9 @@ export class RoleAssignmentMapper {
     };
   }
 
-  static toResponseArray(assignments: RoleAssignment[]): RoleAssignmentResponseDto[] {
-    return assignments.map(assignment => this.toResponse(assignment));
+  static toResponseArray(
+    assignments: RoleAssignment[],
+  ): RoleAssignmentResponseDto[] {
+    return assignments.map((assignment) => this.toResponse(assignment));
   }
 }

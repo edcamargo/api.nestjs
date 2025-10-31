@@ -12,12 +12,12 @@ async function bootstrap() {
   // Try to require cookie-parser if it's installed; if not, continue without failing.
   // If you want cookie support, install with: npm install cookie-parser
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const cookieParser = require('cookie-parser');
+    const cookieParser = require("cookie-parser");
     app.use(cookieParser());
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.warn('cookie-parser not installed; cookie-based token extraction will be disabled. To enable it run: npm install cookie-parser');
+    console.warn(
+      "cookie-parser not installed; cookie-based token extraction will be disabled. To enable it run: npm install cookie-parser",
+    );
   }
 
   // Global validation pipe: whitelist incoming payloads and transform types
@@ -31,26 +31,28 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle("Dark API")
-    .setDescription("API demonstrando Clean Architecture com NestJS, Prisma e RBAC completo")
+    .setDescription(
+      "API demonstrando Clean Architecture com NestJS, Prisma e RBAC completo",
+    )
     .setVersion("1.0")
     .addBearerAuth(
       {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        name: "JWT",
+        description: "Enter JWT token",
+        in: "header",
       },
-      'JWT-auth',
+      "JWT-auth",
     )
     // Tags ordenadas (ordem de exibição no Swagger)
-    .addTag('Health', 'Health checks e métricas da aplicação')
-    .addTag('Authentication', 'Autenticação e autorização JWT')
-    .addTag('Users', 'Gerenciamento de usuários')
-    .addTag('Roles', 'Gerenciamento de papéis e permissões')
-    .addTag('Environment Permissions', 'Permissões por ambiente')
-    .addTag('Role Assignments', 'Atribuições de papéis e permissões')
+    .addTag("Health", "Health checks e métricas da aplicação")
+    .addTag("Authentication", "Autenticação e autorização JWT")
+    .addTag("Users", "Gerenciamento de usuários")
+    .addTag("Roles", "Gerenciamento de papéis e permissões")
+    .addTag("Environment Permissions", "Permissões por ambiente")
+    .addTag("Role Assignments", "Atribuições de papéis e permissões")
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -112,8 +114,8 @@ async function bootstrap() {
   SwaggerModule.setup("api", app, document, {
     swaggerOptions: {
       persistAuthorization: true,
-      tagsSorter: 'alpha',
-      operationsSorter: 'method',
+      tagsSorter: "alpha",
+      operationsSorter: "method",
     },
   });
 

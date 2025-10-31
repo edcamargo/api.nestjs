@@ -1,13 +1,18 @@
-import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
-import type { IRoleRepository } from '../../domain/interfaces/role.repository';
-import { ROLE_REPOSITORY } from '../../domain/interfaces/role.repository';
-import type { IRoleAssignmentRepository } from '../../domain/interfaces/role-assignment.repository';
-import { ROLE_ASSIGNMENT_REPOSITORY } from '../../domain/interfaces/role-assignment.repository';
-import { Role } from '../../domain/role/role.entity';
-import { ROLE_ERRORS } from '../../domain/role';
-import { CreateRoleDto } from '../dtos/create-role.dto';
-import { UpdateRoleDto } from '../dtos/update-role.dto';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import type { IRoleRepository } from "../../domain/interfaces/role.repository";
+import { ROLE_REPOSITORY } from "../../domain/interfaces/role.repository";
+import type { IRoleAssignmentRepository } from "../../domain/interfaces/role-assignment.repository";
+import { ROLE_ASSIGNMENT_REPOSITORY } from "../../domain/interfaces/role-assignment.repository";
+import { Role } from "../../domain/role/role.entity";
+import { ROLE_ERRORS } from "../../domain/role";
+import { CreateRoleDto } from "../dtos/create-role.dto";
+import { UpdateRoleDto } from "../dtos/update-role.dto";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class RoleService {
@@ -16,7 +21,7 @@ export class RoleService {
     private readonly roleRepository: IRoleRepository,
     @Inject(ROLE_ASSIGNMENT_REPOSITORY)
     private readonly roleAssignmentRepository: IRoleAssignmentRepository,
-  ) { }
+  ) {}
 
   async create(createRoleDto: CreateRoleDto): Promise<Role> {
     // Check if role with same name already exists
@@ -107,16 +112,20 @@ export class RoleService {
    * @param includeDeleted - Whether to check deleted assignments as well
    * @throws ConflictException if role is being used
    */
-  private async validateRoleNotInUse(roleId: string, includeDeleted = false): Promise<void> {
-    const allAssignments = await this.roleAssignmentRepository.findAll(includeDeleted);
+  private async validateRoleNotInUse(
+    roleId: string,
+    includeDeleted = false,
+  ): Promise<void> {
+    const allAssignments =
+      await this.roleAssignmentRepository.findAll(includeDeleted);
 
-    const assignmentsUsingRole = allAssignments.filter(assignment =>
-      assignment.roles.includes(roleId)
+    const assignmentsUsingRole = allAssignments.filter((assignment) =>
+      assignment.roles.includes(roleId),
     );
 
     if (assignmentsUsingRole.length > 0) {
       throw new ConflictException(
-        `Cannot delete role: it is currently being used in ${assignmentsUsingRole.length} role assignment(s)`
+        `Cannot delete role: it is currently being used in ${assignmentsUsingRole.length} role assignment(s)`,
       );
     }
   }

@@ -3,73 +3,46 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
-  Inject,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import type { ILogger, IMetrics } from '../../application/observability';
-import { LOGGER, METRICS } from '../../application/observability';
+} from "@nestjs/common";
+import { Observable } from "rxjs";
+import { tap } from "rxjs/operators";
+import { LoggerService } from "../../infrastructure/observability/logger.service";
+import type { Request, Response } from "express";
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(
-    @Inject(LOGGER) private readonly logger: ILogger,
-    @Inject(METRICS) private readonly metrics: IMetrics,
-  ) { }
+  constructor(private readonly logger: LoggerService) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
-    const { method, url, body } = request;
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse<Response>();
+    const method = request.method;
+    const url = request.url;
     const startTime = Date.now();
-
-    this.logger.info(`Incoming request: ${method} ${url}`, 'HTTP', {
-      body: this.sanitizeBody(body),
-    });
 
     return next.handle().pipe(
       tap({
         next: () => {
-          const response = context.switchToHttp().getResponse();
-          const duration = Date.now() - startTime;
-          const { statusCode } = response;
+          const responseTime = Date.now() - startTime;
+          const statusCode = response.statusCode;
 
-          this.logger.info(
-            `Response: ${method} ${url} ${statusCode} - ${duration}ms`,
-            'HTTP',
-          );
-
-          this.metrics.incrementRequestCount(method, url, statusCode);
-          this.metrics.recordRequestDuration(method, url, duration);
+          this.logger.logRequest(method, url, statusCode, responseTime);
         },
-        error: (error) => {
-          const duration = Date.now() - startTime;
-          const statusCode = error.status || 500;
+        error: (err: unknown) => {
+          const responseTime = Date.now() - startTime;
+          const statusCode = response.statusCode || 500;
 
-          this.logger.error(
-            `Error: ${method} ${url} ${statusCode} - ${duration}ms`,
-            error.stack,
-            'HTTP',
-          );
+          this.logger.logRequest(method, url, statusCode, responseTime);
 
-          this.metrics.incrementErrorCount(method, url, statusCode);
-          this.metrics.recordRequestDuration(method, url, duration);
+          if (err instanceof Error) {
+            this.logger.error(
+              `Error processing ${method} ${url}`,
+              err.stack,
+              "LoggingInterceptor",
+            );
+          }
         },
       }),
     );
-  }
-
-  private sanitizeBody(body: any): any {
-    if (!body) return body;
-
-    const sanitized = { ...body };
-    const sensitiveFields = ['password', 'token', 'secret'];
-
-    sensitiveFields.forEach((field) => {
-      if (sanitized[field]) {
-        sanitized[field] = '***REDACTED***';
-      }
-    });
-
-    return sanitized;
   }
 }

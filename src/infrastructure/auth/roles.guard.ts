@@ -8,6 +8,7 @@ import {
 import { Reflector } from "@nestjs/core";
 import { UserRole } from "../../domain/user/user.entity";
 import type { IAuthenticatedUser } from "../../domain/auth";
+import type { Request } from "express";
 
 /**
  * Roles Guard
@@ -16,7 +17,7 @@ import type { IAuthenticatedUser } from "../../domain/auth";
  */
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) { }
+  constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
     // Respect @Public() routes
@@ -40,8 +41,9 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const user: IAuthenticatedUser = request.user;
+    const httpContext = context.switchToHttp();
+    const request = httpContext.getRequest();
+    const user: IAuthenticatedUser | undefined = request.user;
 
     // If user is not set, authentication is required
     if (!user) {

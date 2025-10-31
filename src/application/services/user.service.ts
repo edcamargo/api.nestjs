@@ -17,7 +17,7 @@ import { UpdateUserDto } from "../dtos/update-user.dto";
 export class UserService {
   constructor(
     @Inject(USER_REPOSITORY) private readonly repo: IUserRepository,
-  ) { }
+  ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
     const existing = await this.repo.findByEmail(dto.email, true);
@@ -50,13 +50,16 @@ export class UserService {
     includeDeleted?: string | boolean,
     page?: number,
     perPage?: number,
-  ): Promise<{ data: User[]; meta: { total: number; page: number; perPage: number; totalPages: number } }> {
+  ): Promise<{
+    data: User[];
+    meta: { total: number; page: number; perPage: number; totalPages: number };
+  }> {
     // normalize includeDeleted: accept boolean or common truthy string values
     let include = false;
-    if (typeof includeDeleted === 'boolean') include = includeDeleted;
-    else if (typeof includeDeleted === 'string') {
+    if (typeof includeDeleted === "boolean") include = includeDeleted;
+    else if (typeof includeDeleted === "string") {
       const v = includeDeleted.toLowerCase();
-      include = v === 'true' || v === '1' || v === 'yes';
+      include = v === "true" || v === "1" || v === "yes";
     }
 
     // environment-configurable defaults/limits
@@ -65,11 +68,15 @@ export class UserService {
 
     // normalize pagination
     let pageNum = 1;
-    if (typeof page === 'number' && Number.isFinite(page)) pageNum = Math.floor(page);
-    if (pageNum < 1) throw new BadRequestException('page must be >= 1');
+    if (typeof page === "number" && Number.isFinite(page))
+      pageNum = Math.floor(page);
+    if (pageNum < 1) throw new BadRequestException("page must be >= 1");
 
-    let perPageNum = typeof perPage === 'number' && Number.isFinite(perPage) ? Math.floor(perPage) : DEFAULT_PER_PAGE;
-    if (perPageNum < 1) throw new BadRequestException('perPage must be >= 1');
+    const perPageNum =
+      typeof perPage === "number" && Number.isFinite(perPage)
+        ? Math.floor(perPage)
+        : DEFAULT_PER_PAGE;
+    if (perPageNum < 1) throw new BadRequestException("perPage must be >= 1");
     if (perPageNum > MAX_PER_PAGE)
       throw new BadRequestException(`perPage must be <= ${MAX_PER_PAGE}`);
 
@@ -78,7 +85,8 @@ export class UserService {
       this.repo.count(include),
     ]);
 
-    const totalPages = total === 0 ? 1 : Math.max(1, Math.ceil(total / perPageNum));
+    const totalPages =
+      total === 0 ? 1 : Math.max(1, Math.ceil(total / perPageNum));
 
     return {
       data,

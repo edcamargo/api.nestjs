@@ -1,13 +1,20 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
-import { IEnvironmentPermissionRepository } from '../../domain/interfaces/environment-permission.repository';
-import { EnvironmentPermission, PermittedAction } from '../../domain/environment-permission/environment-permission.entity';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../database/prisma.service";
+import { IEnvironmentPermissionRepository } from "../../domain/interfaces/environment-permission.repository";
+import {
+  EnvironmentPermission,
+  PermittedAction,
+} from "../../domain/environment-permission/environment-permission.entity";
 
 @Injectable()
-export class EnvironmentPermissionRepository implements IEnvironmentPermissionRepository {
-  constructor(private readonly prisma: PrismaService) { }
+export class EnvironmentPermissionRepository
+  implements IEnvironmentPermissionRepository
+{
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(permission: EnvironmentPermission): Promise<EnvironmentPermission> {
+  async create(
+    permission: EnvironmentPermission,
+  ): Promise<EnvironmentPermission> {
     const created = await this.prisma.environmentPermission.create({
       data: {
         id: permission.id,
@@ -26,10 +33,13 @@ export class EnvironmentPermissionRepository implements IEnvironmentPermissionRe
       where: includeDeleted ? {} : { deletedAt: null },
     });
 
-    return permissions.map(permission => this.toDomain(permission));
+    return permissions.map((permission) => this.toDomain(permission));
   }
 
-  async findById(id: string, includeDeleted = false): Promise<EnvironmentPermission | null> {
+  async findById(
+    id: string,
+    includeDeleted = false,
+  ): Promise<EnvironmentPermission | null> {
     const permission = await this.prisma.environmentPermission.findUnique({
       where: { id },
     });
@@ -41,7 +51,10 @@ export class EnvironmentPermissionRepository implements IEnvironmentPermissionRe
     return this.toDomain(permission);
   }
 
-  async findByName(name: string, includeDeleted = false): Promise<EnvironmentPermission | null> {
+  async findByName(
+    name: string,
+    includeDeleted = false,
+  ): Promise<EnvironmentPermission | null> {
     const permission = await this.prisma.environmentPermission.findUnique({
       where: { name },
     });
@@ -53,7 +66,10 @@ export class EnvironmentPermissionRepository implements IEnvironmentPermissionRe
     return this.toDomain(permission);
   }
 
-  async findByProfile(profile: string, includeDeleted = false): Promise<EnvironmentPermission[]> {
+  async findByProfile(
+    profile: string,
+    includeDeleted = false,
+  ): Promise<EnvironmentPermission[]> {
     const permissions = await this.prisma.environmentPermission.findMany({
       where: {
         profile,
@@ -61,10 +77,13 @@ export class EnvironmentPermissionRepository implements IEnvironmentPermissionRe
       },
     });
 
-    return permissions.map(permission => this.toDomain(permission));
+    return permissions.map((permission) => this.toDomain(permission));
   }
 
-  async update(id: string, permissionData: Partial<EnvironmentPermission>): Promise<EnvironmentPermission> {
+  async update(
+    id: string,
+    permissionData: Partial<EnvironmentPermission>,
+  ): Promise<EnvironmentPermission> {
     const data: any = { ...permissionData };
 
     if (permissionData.permittedActions) {
