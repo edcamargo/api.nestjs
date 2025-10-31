@@ -1,0 +1,98 @@
+name: Auto PR to Main
+
+on:
+  workflow_run:
+    workflows: ["CD - Develop"]
+    types:
+      - completed
+    branches:
+      - develop
+
+jobs:
+  create-pr:
+    name: Create PR to Main
+    runs-on: ubuntu-latest
+    # Only run if CD workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Check if PR already exists
+        id: check_pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_EXISTS=$(gh pr list --base main --head develop --json number --jq length)
+          echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
+
+      - name: Get version info
+        id: version
+        run: |
+          VERSION=$(date +'%Y.%m.%d')-${{ github.run_number }}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.check_pr.outputs.pr_exists == '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get latest commits from develop
+          COMMITS=$(git log origin/main..origin/develop --pretty=format:"- %s (%h)" --no-merges | head -10)
+          
+          # Create PR body
+          PR_BODY="## 🚀 Production Release - v${{ steps.version.outputs.version }}
+
+          This PR was automatically created after successful staging deployment.
+
+          ### ✅ All Checks Passed
+          - ✅ Lint
+          - ✅ Unit Tests
+          - ✅ E2E Tests
+          - ✅ Build
+          - ✅ Staging Deployment
+
+          ### 📋 Changes
+          
+          \`\`\`
+          $COMMITS
+          \`\`\`
+
+          ### 🎯 Deployment
+          - **Environment**: Production
+          - **Version**: v${{ steps.version.outputs.version }}
+          - **Latest commit**: ${{ github.event.workflow_run.head_sha }}
+          - **Author**: @${{ github.event.workflow_run.actor.login }}
+
+          ### ⚠️ Important
+          - This will trigger a production deployment
+          - Review changes carefully before merging
+          - Ensure all staging tests have passed
+
+          ---
+          *This PR was automatically generated after successful develop deployment.*"
+
+          # Create the PR
+          gh pr create \
+            --base main \
+            --head develop \
+            --title "🎉 Release v${{ steps.version.outputs.version }}" \
+            --body "$PR_BODY" \
+            --label "automated-pr,release,production"
+
+      - name: Comment on PR
+        if: steps.check_pr.outputs.pr_exists == '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sleep 2
+          PR_NUMBER=$(gh pr list --base main --head develop --json number --jq '.[0].number')
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr comment $PR_NUMBER --body "✅ All staging checks passed! Ready for production deployment. 
+          
+          **Please review carefully before merging to production.**"
+          fi
