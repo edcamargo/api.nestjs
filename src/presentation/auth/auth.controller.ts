@@ -48,8 +48,12 @@ export class AuthController {
     // Controlled by SET_COOKIE_ON_LOGIN env var. To enable Swagger auto-send, set SET_COOKIE_ON_LOGIN=true and COOKIE_HTTPONLY=false
     try {
       if (process.env.SET_COOKIE_ON_LOGIN === "true" && res) {
+        const authData = auth as {
+          accessToken?: string;
+          data?: { accessToken?: string };
+        };
         const token =
-          auth?.accessToken ?? (auth as any)?.data?.accessToken ?? null;
+          authData.accessToken ?? authData.data?.accessToken ?? null;
         if (token) {
           const cookieHttpOnly = process.env.COOKIE_HTTPONLY === "true";
           const maxAge =

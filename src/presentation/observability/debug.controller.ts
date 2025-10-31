@@ -1,6 +1,6 @@
 import { Controller, Get, Req } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
-import { Public } from "../../infrastructure/auth/public.decorator";
+import { Public } from "../auth/public.decorator";
 import type { Request } from "express";
 
 @ApiTags("Debug")
@@ -9,7 +9,11 @@ export class DebugController {
   @Get("headers")
   @Public()
   @ApiOperation({ summary: "Show request headers" })
-  getHeaders(@Req() req: Request) {
+  getHeaders(@Req() req: Request): {
+    headers: Request["headers"];
+    cookies: Record<string, string> | undefined;
+    rawHeaders: string[];
+  } {
     const cookies = req.cookies;
     const rawHeaders = req.rawHeaders;
 
@@ -23,7 +27,11 @@ export class DebugController {
   @Get("env")
   @Public()
   @ApiOperation({ summary: "Show environment info (non-sensitive)" })
-  getEnv() {
+  getEnv(): {
+    nodeEnv: string | undefined;
+    platform: NodeJS.Platform;
+    nodeVersion: string;
+  } {
     return {
       nodeEnv: process.env.NODE_ENV,
       platform: process.platform,
