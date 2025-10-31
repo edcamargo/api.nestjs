@@ -12,9 +12,6 @@ jobs:
       name: production
       url: https://api.edcamargo.dev
     
-    env:
-      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,15 +23,21 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        env:
+          DATABASE_URL: 'file:./production.db'
         run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma Client
+        env:
+          DATABASE_URL: 'file:./production.db'
         run: npx prisma generate
 
       - name: Build application
         run: npm run build
 
       - name: Run database migrations
+        env:
+          DATABASE_URL: 'file:./production.db'
         run: npx prisma migrate deploy
 
       - name: Login to Docker Hub
