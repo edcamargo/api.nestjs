@@ -6,7 +6,7 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
-import { Request } from "express";
+import type { Request } from "express";
 
 /**
  * JWT Authentication Guard
@@ -34,7 +34,8 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
 
     // Support token from header, query params, or cookies
     try {
-      const req = context.switchToHttp().getRequest<Request>();
+      const httpContext = context.switchToHttp();
+      const req = httpContext.getRequest();
       const headers = req.headers;
 
       // Read from authorization header or x-access-token header
