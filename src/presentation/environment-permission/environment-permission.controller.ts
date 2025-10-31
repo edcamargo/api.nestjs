@@ -47,10 +47,10 @@ export class EnvironmentPermissionController {
   })
   async create(
     @Body() createDto: CreateEnvironmentPermissionDto,
-  ): Promise<{ data: EnvironmentPermissionResponseDto }> {
+  ): Promise<EnvironmentPermissionResponseDto> {
     const permission =
       await this.environmentPermissionService.create(createDto);
-    return { data: EnvironmentPermissionMapper.toResponse(permission) };
+    return EnvironmentPermissionMapper.toResponse(permission);
   }
 
   @Get()
@@ -64,11 +64,11 @@ export class EnvironmentPermissionController {
   })
   async findAll(
     @Query("includeDeleted") includeDeleted?: string,
-  ): Promise<{ data: EnvironmentPermissionResponseDto[] }> {
+  ): Promise<EnvironmentPermissionResponseDto[]> {
     const permissions = await this.environmentPermissionService.findAll(
       includeDeleted === "true",
     );
-    return { data: EnvironmentPermissionMapper.toResponseArray(permissions) };
+    return EnvironmentPermissionMapper.toResponseArray(permissions);
   }
 
   @Get(":id")
@@ -82,9 +82,9 @@ export class EnvironmentPermissionController {
   @ApiResponse({ status: 404, description: "Environment permission not found" })
   async findById(
     @Param("id") id: string,
-  ): Promise<{ data: EnvironmentPermissionResponseDto }> {
+  ): Promise<EnvironmentPermissionResponseDto> {
     const permission = await this.environmentPermissionService.findById(id);
-    return { data: EnvironmentPermissionMapper.toResponse(permission) };
+    return EnvironmentPermissionMapper.toResponse(permission);
   }
 
   @Put(":id")
@@ -99,12 +99,12 @@ export class EnvironmentPermissionController {
   async update(
     @Param("id") id: string,
     @Body() updateDto: UpdateEnvironmentPermissionDto,
-  ): Promise<{ data: EnvironmentPermissionResponseDto }> {
+  ): Promise<EnvironmentPermissionResponseDto> {
     const permission = await this.environmentPermissionService.update(
       id,
       updateDto,
     );
-    return { data: EnvironmentPermissionMapper.toResponse(permission) };
+    return EnvironmentPermissionMapper.toResponse(permission);
   }
 
   @Delete(":id")
@@ -132,9 +132,9 @@ export class EnvironmentPermissionController {
   @ApiResponse({ status: 404, description: "Environment permission not found" })
   async restore(
     @Param("id") id: string,
-  ): Promise<{ data: EnvironmentPermissionResponseDto }> {
+  ): Promise<EnvironmentPermissionResponseDto> {
     const permission = await this.environmentPermissionService.restore(id);
-    return { data: EnvironmentPermissionMapper.toResponse(permission) };
+    return EnvironmentPermissionMapper.toResponse(permission);
   }
 
   @Delete(":id/hard")
