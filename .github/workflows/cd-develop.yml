@@ -13,9 +13,6 @@ jobs:
       name: staging
       url: https://staging.api.edcamargo.dev
     
-    env:
-      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,15 +24,21 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        env:
+          DATABASE_URL: 'file:./staging.db'
         run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma Client
+        env:
+          DATABASE_URL: 'file:./staging.db'
         run: npx prisma generate
 
       - name: Build application
         run: npm run build
 
       - name: Run database migrations
+        env:
+          DATABASE_URL: 'file:./staging.db'
         run: npx prisma migrate deploy
 
       - name: Login to Docker Hub
