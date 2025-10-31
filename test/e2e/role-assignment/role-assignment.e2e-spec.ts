@@ -80,25 +80,25 @@ describe("RoleAssignment (E2E)", () => {
       await request(app.getHttpServer())
         .delete(`/role-assignments/${createdAssignmentId}/hard`)
         .set("Authorization", `Bearer ${authToken}`)
-        .catch(() => { });
+        .catch(() => {});
     }
     if (testUserId) {
       await request(app.getHttpServer())
         .delete(`/api/users/${testUserId}/hard`)
         .set("Authorization", `Bearer ${authToken}`)
-        .catch(() => { });
+        .catch(() => {});
     }
     if (testRoleId) {
       await request(app.getHttpServer())
         .delete(`/roles/${testRoleId}/hard`)
         .set("Authorization", `Bearer ${authToken}`)
-        .catch(() => { });
+        .catch(() => {});
     }
     if (testPermissionId) {
       await request(app.getHttpServer())
         .delete(`/environment-permissions/${testPermissionId}/hard`)
         .set("Authorization", `Bearer ${authToken}`)
-        .catch(() => { });
+        .catch(() => {});
     }
 
     await app.close();

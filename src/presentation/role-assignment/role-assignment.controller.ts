@@ -29,7 +29,7 @@ import { UserRole } from "../../domain/user/user.entity";
 @ApiBearerAuth("JWT-auth")
 @Controller("role-assignments")
 export class RoleAssignmentController {
-  constructor(private readonly roleAssignmentService: RoleAssignmentService) { }
+  constructor(private readonly roleAssignmentService: RoleAssignmentService) {}
 
   @Post()
   @Roles(UserRole.ADMIN)

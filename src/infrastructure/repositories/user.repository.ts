@@ -5,7 +5,7 @@ import { PrismaService } from "../database/prisma.service";
 
 @Injectable()
 export class UserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // Prisma returns any type for entities, so we need to disable some rules
 
