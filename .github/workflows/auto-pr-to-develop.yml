@@ -5,9 +5,10 @@ on:
     workflows: ["CI Pipeline"]
     types:
       - completed
-    branches-ignore:
-      - develop
-      - main
+    branches:
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
 
 jobs:
   create-pr:
@@ -23,7 +24,22 @@ jobs:
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
+      - name: Validate branch name
+        id: validate
+        run: |
+          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+          
+          if [[ "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix)/.+ ]]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "✅ Branch name '$BRANCH_NAME' follows the pattern"
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "❌ Branch name '$BRANCH_NAME' does not follow the pattern (feature/*, bugfix/*, hotfix/*)"
+            exit 0
+          fi
+
       - name: Check if PR already exists
+        if: steps.validate.outputs.valid == 'true'
         id: check_pr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -32,47 +48,64 @@ jobs:
           echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
-        if: steps.check_pr.outputs.pr_exists == '0'
+        if: steps.validate.outputs.valid == 'true' && steps.check_pr.outputs.pr_exists == '0'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get branch name
           BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
           
+          # Extract type and name from branch
+          BRANCH_TYPE=$(echo "$BRANCH_NAME" | cut -d'/' -f1)
+          BRANCH_FEATURE=$(echo "$BRANCH_NAME" | cut -d'/' -f2-)
+          
           # Create PR title from branch name
-          PR_TITLE=$(echo "$BRANCH_NAME" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+          PR_TITLE=$(echo "$BRANCH_FEATURE" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+          
+          # Set emoji based on branch type
+          case "$BRANCH_TYPE" in
+            feature) EMOJI="✨" ;;
+            bugfix)  EMOJI="🐛" ;;
+            hotfix)  EMOJI="🚑" ;;
+            *)       EMOJI="🚀" ;;
+          esac
           
           # Create PR body
-          PR_BODY="## 🤖 Automated Pull Request
+          PR_BODY="## $EMOJI Automated Pull Request - ${BRANCH_TYPE^}
 
           This PR was automatically created after CI checks passed.
 
-          ### Changes
-          - Branch: \`$BRANCH_NAME\`
-          - Latest commit: ${{ github.event.workflow_run.head_sha }}
-          - Author: @${{ github.event.workflow_run.actor.login }}
+          ### 📋 Details
+          - **Type**: \`$BRANCH_TYPE\`
+          - **Branch**: \`$BRANCH_NAME\`
+          - **Latest commit**: ${{ github.event.workflow_run.head_sha }}
+          - **Author**: @${{ github.event.workflow_run.actor.login }}
 
-          ### CI Status
-          ✅ All checks passed successfully
+          ### ✅ CI Status
+          All checks passed successfully:
+          - ✅ Lint
+          - ✅ Unit Tests
+          - ✅ E2E Tests
+          - ✅ Build
 
-          ### Next Steps
+          ### 📝 Next Steps
           - Review the changes
           - Approve and merge to \`develop\`
           - Automated deployment to staging will follow
 
           ---
-          *This PR was automatically generated. Please review before merging.*"
+          *This PR was automatically generated following Git Flow best practices.*"
 
           # Create the PR
           gh pr create \
             --base develop \
             --head "$BRANCH_NAME" \
-            --title "🚀 $PR_TITLE" \
+            --title "$EMOJI $PR_TITLE" \
             --body "$PR_BODY" \
-            --label "automated-pr,ready-for-review"
+            --label "automated-pr,$BRANCH_TYPE,ready-for-review"
 
       - name: Comment on PR
-        if: steps.check_pr.outputs.pr_exists == '0'
+        if: steps.validate.outputs.valid == 'true' && steps.check_pr.outputs.pr_exists == '0'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

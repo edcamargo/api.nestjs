@@ -9,7 +9,6 @@ on:
       - 'feature/**'
       - 'bugfix/**'
       - 'hotfix/**'
-      - cicd
 
 jobs:
   lint:

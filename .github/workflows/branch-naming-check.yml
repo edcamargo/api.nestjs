@@ -1,0 +1,53 @@
+name: Branch Naming Check
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  check-branch-name:
+    name: Validate Branch Name
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check branch naming convention
+        run: |
+          echo "Checking branch name: ${{ github.ref_name }}"
+          
+          # Allow develop and main
+          if [[ "${{ github.ref_name }}" == "develop" ]] || [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "✅ Main branch detected"
+            exit 0
+          fi
+          
+          # Check if branch follows naming convention
+          if [[ "${{ github.ref_name }}" =~ ^(feature|bugfix|hotfix)/.+ ]]; then
+            echo "✅ Branch name '${{ github.ref_name }}' follows the naming convention"
+            exit 0
+          else
+            echo "❌ Branch name '${{ github.ref_name }}' does not follow the naming convention!"
+            echo ""
+            echo "📋 Required patterns:"
+            echo "  - feature/<description>  (for new features)"
+            echo "  - bugfix/<description>   (for bug fixes)"
+            echo "  - hotfix/<description>   (for urgent production fixes)"
+            echo ""
+            echo "Examples:"
+            echo "  ✅ feature/user-authentication"
+            echo "  ✅ bugfix/fix-login-error"
+            echo "  ✅ hotfix/critical-security-patch"
+            echo ""
+            echo "❌ Invalid: my-branch, test, cicd"
+            exit 1
+          fi
+
+      - name: Success message
+        if: success()
+        run: |
+          echo "🎉 Branch naming convention check passed!"
+          echo "Branch: ${{ github.ref_name }}"
