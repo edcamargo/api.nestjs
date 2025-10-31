@@ -11,7 +11,6 @@ import {
   Query,
   UseGuards,
   DefaultValuePipe,
-  ParseBoolPipe,
   ParseIntPipe,
 } from "@nestjs/common";
 import { UserService } from "../../application/services/user.service";

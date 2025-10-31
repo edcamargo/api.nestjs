@@ -1,6 +1,6 @@
 import { Controller, Get } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
-import { Public } from "../../infrastructure/auth/public.decorator";
+import { Public } from "../auth/public.decorator";
 
 @ApiTags("Observability")
 @Controller("health")
@@ -8,7 +8,13 @@ export class HealthController {
   @Get()
   @Public()
   @ApiOperation({ summary: "Health check endpoint" })
-  healthCheck() {
+  healthCheck(): {
+    status: string;
+    timestamp: string;
+    uptime: number;
+    memory: NodeJS.MemoryUsage;
+    environment: string;
+  } {
     return {
       status: "ok",
       timestamp: new Date().toISOString(),
@@ -21,14 +27,14 @@ export class HealthController {
   @Get("live")
   @Public()
   @ApiOperation({ summary: "Liveness probe" })
-  liveness() {
+  liveness(): { status: string } {
     return { status: "ok" };
   }
 
   @Get("ready")
   @Public()
   @ApiOperation({ summary: "Readiness probe" })
-  readiness() {
+  readiness(): { status: string; ready: boolean } {
     try {
       // Add checks here (database, external services, etc.)
       return { status: "ok", ready: true };
@@ -40,7 +46,7 @@ export class HealthController {
   @Get("version")
   @Public()
   @ApiOperation({ summary: "API version" })
-  version() {
+  version(): { version: string; node: string } {
     return {
       version: process.env.npm_package_version || "1.0.0",
       node: process.version,
@@ -50,7 +56,13 @@ export class HealthController {
   @Get("metrics")
   @Public()
   @ApiOperation({ summary: "Basic metrics" })
-  metrics() {
+  metrics(): {
+    uptime: number;
+    memory: NodeJS.MemoryUsage;
+    cpu: NodeJS.CpuUsage;
+    platform: NodeJS.Platform;
+    nodeVersion: string;
+  } {
     return {
       uptime: process.uptime(),
       memory: process.memoryUsage(),
