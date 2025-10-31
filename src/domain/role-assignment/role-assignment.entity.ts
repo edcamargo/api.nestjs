@@ -19,7 +19,7 @@ export class RoleAssignment {
     public createdAt: Date,
     public updatedAt: Date,
     public deletedAt?: Date | null,
-  ) {}
+  ) { }
 
   isActive(): boolean {
     const now = new Date();

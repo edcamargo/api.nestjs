@@ -5,7 +5,7 @@ import { EnvironmentPermission, PermittedAction } from '../../domain/environment
 
 @Injectable()
 export class EnvironmentPermissionRepository implements IEnvironmentPermissionRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(permission: EnvironmentPermission): Promise<EnvironmentPermission> {
     const created = await this.prisma.environmentPermission.create({
@@ -66,7 +66,7 @@ export class EnvironmentPermissionRepository implements IEnvironmentPermissionRe
 
   async update(id: string, permissionData: Partial<EnvironmentPermission>): Promise<EnvironmentPermission> {
     const data: any = { ...permissionData };
-    
+
     if (permissionData.permittedActions) {
       data.permittedActions = JSON.stringify(permissionData.permittedActions);
     }

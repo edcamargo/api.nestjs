@@ -11,31 +11,31 @@ datasource db {
 }
 
 model User {
-  id                         String    @id @default(uuid())
-  name                       String
-  surname                    String    @default("")
-  email                      String    @unique
-  username                   String?   @unique
-  password                   String
-  phone1                     String    @default("")
-  phone2                     String?
-  dialCodePhone1             String    @default("+351")
-  dialCodePhone2             String?
-  countryCodePhone1          String    @default("PT")
-  countryCodePhone2          String?
-  internationalNumberPhone1  String    @default("")
-  internationalNumberPhone2  String?
-  workIp                     String?   @map("work_ip")
-  notes                      String?
-  state                      String    @default("Active")
-  role                       String    @default("USER")
-  createdAt                  DateTime  @default(now()) @map("created_at")
-  updatedAt                  DateTime  @updatedAt @map("updated_at")
-  deletedAt                  DateTime? @map("deleted_at")
+  id                        String    @id @default(uuid())
+  name                      String
+  surname                   String    @default("")
+  email                     String    @unique
+  username                  String?
+  password                  String
+  phone1                    String    @default("")
+  phone2                    String?
+  dialCodePhone1            String    @default("+351")
+  dialCodePhone2            String?
+  countryCodePhone1         String    @default("PT")
+  countryCodePhone2         String?
+  internationalNumberPhone1 String    @default("")
+  internationalNumberPhone2 String?
+  workIp                    String?   @map("work_ip")
+  notes                     String?
+  state                     String    @default("Active")
+  role                      String    @default("USER")
+  createdAt                 DateTime  @default(now()) @map("created_at")
+  updatedAt                 DateTime  @updatedAt @map("updated_at")
+  deletedAt                 DateTime? @map("deleted_at")
 
   // Relations
-  grantedAssignments         RoleAssignment[] @relation("GrantedBy")
-  roleAssignments            RoleAssignment[] @relation("AssignedTo")
+  grantedAssignments RoleAssignment[] @relation("GrantedBy")
+  roleAssignments    RoleAssignment[] @relation("AssignedTo")
 
   @@map("users")
 }
@@ -44,7 +44,7 @@ model Role {
   id          String    @id @default(uuid())
   name        String    @unique
   description String
-  accessAreas String    // JSON array serialized
+  accessAreas String // JSON array serialized
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -56,7 +56,7 @@ model Role {
 model EnvironmentPermission {
   id               String    @id @default(uuid())
   name             String    @unique
-  permittedActions String    // JSON array serialized (READ, WRITE, DELETE, EXECUTE)
+  permittedActions String // JSON array serialized (READ, WRITE, DELETE, EXECUTE)
   profile          String
   purpose          String
   createdAt        DateTime  @default(now()) @map("created_at")
@@ -69,7 +69,7 @@ model EnvironmentPermission {
 model RoleAssignment {
   id                 String    @id @default(uuid())
   userId             String    @map("user_id")
-  roles              String    // JSON array of role IDs
+  roles              String // JSON array of role IDs
   accessEnvironments String    @map("access_environments") // JSON array of env permission IDs
   startDate          DateTime  @map("start_date")
   endDate            DateTime? @map("end_date")
@@ -81,8 +81,8 @@ model RoleAssignment {
   deletedAt          DateTime? @map("deleted_at")
 
   // Relations
-  user               User      @relation("AssignedTo", fields: [userId], references: [id], onDelete: Cascade)
-  grantedByUser      User      @relation("GrantedBy", fields: [grantedBy], references: [id], onDelete: Restrict)
+  user          User @relation("AssignedTo", fields: [userId], references: [id], onDelete: Cascade)
+  grantedByUser User @relation("GrantedBy", fields: [grantedBy], references: [id], onDelete: Restrict)
 
   @@map("role_assignments")
 }

@@ -16,7 +16,7 @@ export class RoleService {
     private readonly roleRepository: IRoleRepository,
     @Inject(ROLE_ASSIGNMENT_REPOSITORY)
     private readonly roleAssignmentRepository: IRoleAssignmentRepository,
-  ) {}
+  ) { }
 
   async create(createRoleDto: CreateRoleDto): Promise<Role> {
     // Check if role with same name already exists
@@ -71,10 +71,10 @@ export class RoleService {
 
   async softDelete(id: string): Promise<void> {
     await this.findById(id);
-    
+
     // Check if role is being used in any active assignments
     await this.validateRoleNotInUse(id);
-    
+
     await this.roleRepository.softDelete(id);
   }
 
@@ -94,10 +94,10 @@ export class RoleService {
 
   async hardDelete(id: string): Promise<void> {
     await this.findById(id, true);
-    
+
     // Check if role is being used in ANY assignments (even deleted ones)
     await this.validateRoleNotInUse(id, true);
-    
+
     await this.roleRepository.hardDelete(id);
   }
 
@@ -109,8 +109,8 @@ export class RoleService {
    */
   private async validateRoleNotInUse(roleId: string, includeDeleted = false): Promise<void> {
     const allAssignments = await this.roleAssignmentRepository.findAll(includeDeleted);
-    
-    const assignmentsUsingRole = allAssignments.filter(assignment => 
+
+    const assignmentsUsingRole = allAssignments.filter(assignment =>
       assignment.roles.includes(roleId)
     );
 

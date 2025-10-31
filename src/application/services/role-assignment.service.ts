@@ -24,7 +24,7 @@ export class RoleAssignmentService {
     private readonly roleRepository: IRoleRepository,
     @Inject(ENVIRONMENT_PERMISSION_REPOSITORY)
     private readonly environmentPermissionRepository: IEnvironmentPermissionRepository,
-  ) {}
+  ) { }
 
   async create(createDto: CreateRoleAssignmentDto): Promise<RoleAssignment> {
     // Validate user exists

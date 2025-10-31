@@ -31,7 +31,7 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
     try {
       const req = context.switchToHttp().getRequest();
       const headers = req.headers || {};
-      
+
       // Read from authorization header or x-access-token header
       let header = headers.authorization || headers['x-access-token'];
       if (Array.isArray(header)) header = header[0];

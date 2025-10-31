@@ -5,7 +5,7 @@ import { RoleAssignment, RoleAssignmentState } from '../../domain/role-assignmen
 
 @Injectable()
 export class RoleAssignmentRepository implements IRoleAssignmentRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(assignment: RoleAssignment): Promise<RoleAssignment> {
     const created = await this.prisma.roleAssignment.create({
@@ -87,11 +87,11 @@ export class RoleAssignmentRepository implements IRoleAssignmentRepository {
 
   async update(id: string, assignmentData: Partial<RoleAssignment>): Promise<RoleAssignment> {
     const data: any = { ...assignmentData };
-    
+
     if (assignmentData.roles) {
       data.roles = JSON.stringify(assignmentData.roles);
     }
-    
+
     if (assignmentData.accessEnvironments) {
       data.accessEnvironments = JSON.stringify(assignmentData.accessEnvironments);
     }

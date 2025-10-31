@@ -11,11 +11,11 @@ export class CreateEnvironmentPermissionDto {
   @MaxLength(ENVIRONMENT_PERMISSION_VALIDATION.NAME_MAX_LENGTH)
   name: string;
 
-  @ApiProperty({ 
-    example: ['READ', 'WRITE', 'DELETE'], 
+  @ApiProperty({
+    example: ['READ', 'WRITE', 'DELETE'],
     enum: PermittedAction,
     isArray: true,
-    description: 'Permitted actions' 
+    description: 'Permitted actions'
   })
   @IsArray()
   @IsEnum(PermittedAction, { each: true })

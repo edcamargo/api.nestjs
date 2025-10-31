@@ -5,7 +5,7 @@ import { PrismaService } from "../database/prisma.service";
 
 @Injectable()
 export class UserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private toDomain(entity: any): User {
     // adapta objeto do Prisma para a entidade de domínio

@@ -35,4 +35,4 @@ import { DatabaseModule } from '../../infrastructure/database/database.module';
   ],
   exports: [RoleAssignmentService],
 })
-export class RoleAssignmentModule {}
+export class RoleAssignmentModule { }

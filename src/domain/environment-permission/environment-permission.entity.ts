@@ -15,7 +15,7 @@ export class EnvironmentPermission {
     public createdAt: Date,
     public updatedAt: Date,
     public deletedAt?: Date | null,
-  ) {}
+  ) { }
 
   canPerformAction(action: PermittedAction): boolean {
     return this.permittedActions.includes(action);

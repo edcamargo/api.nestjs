@@ -16,7 +16,7 @@ export class EnvironmentPermissionService {
     private readonly environmentPermissionRepository: IEnvironmentPermissionRepository,
     @Inject(ROLE_ASSIGNMENT_REPOSITORY)
     private readonly roleAssignmentRepository: IRoleAssignmentRepository,
-  ) {}
+  ) { }
 
   async create(createDto: CreateEnvironmentPermissionDto): Promise<EnvironmentPermission> {
     // Check if permission with same name already exists
@@ -71,10 +71,10 @@ export class EnvironmentPermissionService {
 
   async softDelete(id: string): Promise<void> {
     await this.findById(id);
-    
+
     // Check if environment permission is being used in any active assignments
     await this.validateEnvironmentPermissionNotInUse(id);
-    
+
     await this.environmentPermissionRepository.softDelete(id);
   }
 
@@ -94,10 +94,10 @@ export class EnvironmentPermissionService {
 
   async hardDelete(id: string): Promise<void> {
     await this.findById(id, true);
-    
+
     // Check if environment permission is being used in ANY assignments (even deleted ones)
     await this.validateEnvironmentPermissionNotInUse(id, true);
-    
+
     await this.environmentPermissionRepository.hardDelete(id);
   }
 
@@ -109,8 +109,8 @@ export class EnvironmentPermissionService {
    */
   private async validateEnvironmentPermissionNotInUse(envPermId: string, includeDeleted = false): Promise<void> {
     const allAssignments = await this.roleAssignmentRepository.findAll(includeDeleted);
-    
-    const assignmentsUsingEnvPerm = allAssignments.filter(assignment => 
+
+    const assignmentsUsingEnvPerm = allAssignments.filter(assignment =>
       assignment.accessEnvironments.includes(envPermId)
     );
 

@@ -27,14 +27,14 @@ describe('UserController (unit)', () => {
     it('should return users and call service.findAll with false when includeDeleted not provided', async () => {
       const now = new Date();
       const user = new User('id-1', 'Rambo', 'rambo@rambo.com', 'hashed', UserRole.ADMIN, now, now);
-    mockService.findAll!.mockResolvedValue({ data: [user], meta: { total: 1, page: 1, perPage: 10, totalPages: 1 } });
+      mockService.findAll!.mockResolvedValue({ data: [user], meta: { total: 1, page: 1, perPage: 10, totalPages: 1 } });
 
-  const result = await controller.findAll();
+      const result = await controller.findAll();
 
-  expect(mockService.findAll).toHaveBeenCalledWith(undefined, 1, 10);
-  expect(Array.isArray(result.data)).toBe(true);
-  expect(result.data[0]).toHaveProperty('id', 'id-1');
-  expect(result.data[0]).toHaveProperty('email', 'rambo@rambo.com');
+      expect(mockService.findAll).toHaveBeenCalledWith(undefined, 1, 10);
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data[0]).toHaveProperty('id', 'id-1');
+      expect(result.data[0]).toHaveProperty('email', 'rambo@rambo.com');
     });
 
     it('should call service.findAll with true when includeDeleted is "true"', async () => {

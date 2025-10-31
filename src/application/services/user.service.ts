@@ -17,7 +17,7 @@ import { UpdateUserDto } from "../dtos/update-user.dto";
 export class UserService {
   constructor(
     @Inject(USER_REPOSITORY) private readonly repo: IUserRepository,
-  ) {}
+  ) { }
 
   async create(dto: CreateUserDto): Promise<User> {
     const existing = await this.repo.findByEmail(dto.email, true);

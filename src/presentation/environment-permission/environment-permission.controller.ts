@@ -12,7 +12,7 @@ import { UserRole } from '../../domain/user/user.entity';
 @ApiBearerAuth('JWT-auth')
 @Controller('environment-permissions')
 export class EnvironmentPermissionController {
-  constructor(private readonly environmentPermissionService: EnvironmentPermissionService) {}
+  constructor(private readonly environmentPermissionService: EnvironmentPermissionService) { }
 
   @Post()
   @Roles(UserRole.ADMIN)

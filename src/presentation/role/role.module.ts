@@ -23,4 +23,4 @@ import { DatabaseModule } from '../../infrastructure/database/database.module';
   ],
   exports: [RoleService],
 })
-export class RoleModule {}
+export class RoleModule { }

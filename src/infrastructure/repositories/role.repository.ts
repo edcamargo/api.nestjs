@@ -5,7 +5,7 @@ import { Role } from '../../domain/role/role.entity';
 
 @Injectable()
 export class RoleRepository implements IRoleRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(role: Role): Promise<Role> {
     const created = await this.prisma.role.create({
@@ -66,7 +66,7 @@ export class RoleRepository implements IRoleRepository {
 
   async update(id: string, roleData: Partial<Role>): Promise<Role> {
     const data: any = { ...roleData };
-    
+
     if (roleData.accessAreas) {
       data.accessAreas = JSON.stringify(roleData.accessAreas);
     }

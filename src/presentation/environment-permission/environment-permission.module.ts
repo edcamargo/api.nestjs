@@ -23,4 +23,4 @@ import { DatabaseModule } from '../../infrastructure/database/database.module';
   ],
   exports: [EnvironmentPermissionService],
 })
-export class EnvironmentPermissionModule {}
+export class EnvironmentPermissionModule { }
