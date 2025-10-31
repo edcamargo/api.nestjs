@@ -1,2 +1,2 @@
-export * from './role.entity';
-export * from './role.constants';
+export * from "./role.entity";
+export * from "./role.constants";

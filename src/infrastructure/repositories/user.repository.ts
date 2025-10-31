@@ -5,18 +5,28 @@ import { PrismaService } from "../database/prisma.service";
 
 @Injectable()
 export class UserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
+
+  // Prisma returns any type for entities, so we need to disable some rules
 
   private toDomain(entity: any): User {
     // adapta objeto do Prisma para a entidade de domínio
     return new User(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       entity.id,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       entity.name,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       entity.email,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       entity.password,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       entity.role as UserRole,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       entity.createdAt,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       entity.updatedAt,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       entity.deletedAt ?? null,
     );
   }
@@ -34,13 +44,17 @@ export class UserRepository implements IUserRepository {
     return this.toDomain(saved);
   }
 
-  async findAll(includeDeleted = false, page = 1, perPage = 10): Promise<User[]> {
+  async findAll(
+    includeDeleted = false,
+    page = 1,
+    perPage = 10,
+  ): Promise<User[]> {
     const skip = Math.max(0, page - 1) * Math.max(1, perPage);
     const entities = await this.prisma.user.findMany({
       where: includeDeleted ? {} : { deletedAt: null },
       skip,
       take: perPage,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return entities.map((e) => this.toDomain(e));
   }
@@ -83,11 +97,14 @@ export class UserRepository implements IUserRepository {
     };
 
     if (user.password) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       data.password = user.password;
     }
 
+    // Prisma returns any
     const updated = await this.prisma.user.update({
       where: { id: user.id },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data,
     });
     return this.toDomain(updated);

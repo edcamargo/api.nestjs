@@ -1,2 +1,2 @@
-export * from './environment-permission.entity';
-export * from './environment-permission.constants';
+export * from "./environment-permission.entity";
+export * from "./environment-permission.constants";

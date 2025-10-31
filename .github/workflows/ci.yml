@@ -73,21 +73,6 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: lint
-    
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: nestjs_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -101,27 +86,27 @@ jobs:
 
       - name: Install dependencies
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nestjs_test
+          DATABASE_URL: 'file:./test.db'
         run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma Client
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nestjs_test
+          DATABASE_URL: 'file:./test.db'
         run: npx prisma generate
 
       - name: Run database migrations
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nestjs_test
+          DATABASE_URL: 'file:./test.db'
         run: npx prisma migrate deploy
 
       - name: Seed database
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nestjs_test
+          DATABASE_URL: 'file:./test.db'
         run: npx prisma db seed
 
       - name: Run E2E tests
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nestjs_test
+          DATABASE_URL: 'file:./test.db'
           JWT_SECRET: test-secret-key-for-ci-cd-pipeline
           NODE_ENV: test
           PORT: 3000

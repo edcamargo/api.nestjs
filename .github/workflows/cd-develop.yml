@@ -13,9 +13,6 @@ jobs:
       name: staging
       url: https://staging.api.edcamargo.dev
     
-    env:
-      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,36 +24,43 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        env:
+          DATABASE_URL: 'file:./staging.db'
         run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma Client
+        env:
+          DATABASE_URL: 'file:./staging.db'
         run: npx prisma generate
 
       - name: Build application
         run: npm run build
 
       - name: Run database migrations
+        env:
+          DATABASE_URL: 'file:./staging.db'
         run: npx prisma migrate deploy
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+      # Docker steps disabled - uncomment when Docker Hub credentials are configured
+      # - name: Login to Docker Hub
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v3
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-api:staging
-            ${{ secrets.DOCKER_USERNAME }}/nestjs-api:staging-${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nestjs-api:staging
-          cache-to: type=inline
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     push: true
+      #     tags: |
+      #       ${{ secrets.DOCKER_USERNAME }}/nestjs-api:staging
+      #       ${{ secrets.DOCKER_USERNAME }}/nestjs-api:staging-${{ github.sha }}
+      #     cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nestjs-api:staging
+      #     cache-to: type=inline
 
       - name: Deploy summary
         run: |
@@ -66,7 +70,8 @@ jobs:
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: develop" >> $GITHUB_STEP_SUMMARY
           echo "- **Author**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Docker Image**: ${{ secrets.DOCKER_USERNAME }}/nestjs-api:staging" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Docker build disabled - configure DOCKER_USERNAME and DOCKER_TOKEN secrets to enable" >> $GITHUB_STEP_SUMMARY
 
       # Uncomment if you want Slack notifications
       # - name: Notify deployment

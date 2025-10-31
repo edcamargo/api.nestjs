@@ -1,5 +1,6 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import type { IAuthenticatedUser } from "../../domain/auth";
+import type { Request } from "express";
 
 /**
  * CurrentUser decorator
@@ -21,10 +22,13 @@ export const CurrentUser = createParamDecorator(
   (
     data: keyof IAuthenticatedUser | undefined,
     ctx: ExecutionContext,
-  ): IAuthenticatedUser | any => {
-    const request = ctx.switchToHttp().getRequest();
-    const user: IAuthenticatedUser = request.user;
+  ): IAuthenticatedUser | string | undefined => {
+    const httpContext = ctx.switchToHttp();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const request = httpContext.getRequest();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const user: IAuthenticatedUser | undefined = request.user;
 
-    return data ? user?.[data] : user;
+    return data && user ? user[data] : user;
   },
 );

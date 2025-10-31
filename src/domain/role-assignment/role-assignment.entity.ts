@@ -1,8 +1,8 @@
 export enum RoleAssignmentState {
-  ACTIVE = 'Active',
-  INACTIVE = 'Inactive',
-  SUSPENDED = 'Suspended',
-  EXPIRED = 'Expired',
+  ACTIVE = "Active",
+  INACTIVE = "Inactive",
+  SUSPENDED = "Suspended",
+  EXPIRED = "Expired",
 }
 
 export class RoleAssignment {
@@ -19,12 +19,17 @@ export class RoleAssignment {
     public createdAt: Date,
     public updatedAt: Date,
     public deletedAt?: Date | null,
-  ) { }
+  ) {}
 
   isActive(): boolean {
     const now = new Date();
-    const isWithinDateRange = this.startDate <= now && (!this.endDate || this.endDate >= now);
-    return this.state === RoleAssignmentState.ACTIVE && isWithinDateRange && !this.deletedAt;
+    const isWithinDateRange =
+      this.startDate <= now && (!this.endDate || this.endDate >= now);
+    return (
+      this.state === RoleAssignmentState.ACTIVE &&
+      isWithinDateRange &&
+      !this.deletedAt
+    );
   }
 
   isExpired(): boolean {
@@ -41,7 +46,7 @@ export class RoleAssignment {
   }
 
   hasAnyRole(roleIds: string[]): boolean {
-    return roleIds.some(roleId => this.roles.includes(roleId));
+    return roleIds.some((roleId) => this.roles.includes(roleId));
   }
 
   isDeleted(): boolean {

@@ -8,7 +8,10 @@ import { AuthModule } from "./presentation/auth";
 import { JwtAuthGuard } from "./infrastructure/auth";
 import { DatabaseModule } from "./infrastructure/database";
 import { ObservabilityModule } from "./infrastructure/observability";
-import { LoggingInterceptor, HealthController } from "./presentation/observability";
+import {
+  LoggingInterceptor,
+  HealthController,
+} from "./presentation/observability";
 
 @Module({
   imports: [
@@ -32,4 +35,4 @@ import { LoggingInterceptor, HealthController } from "./presentation/observabili
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

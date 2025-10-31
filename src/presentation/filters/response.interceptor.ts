@@ -6,31 +6,31 @@ import {
 } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
+import { Request } from "express";
 
 @Injectable()
-export class ResponseInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
+export class ResponseInterceptor<T>
+  implements NestInterceptor<T, { data: T } | T>
+{
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler<T>,
+  ): Observable<{ data: T } | T> {
+    const request = context.switchToHttp().getRequest<Request>();
     const path = request.url;
 
-    // Don't wrap responses for auth and health endpoints
-    // These endpoints return their own specific response format
-    if (path.startsWith('/auth') || path.startsWith('/health')) {
+    // Skip transformation for /auth and /health endpoints
+    if (path.startsWith("/auth") || path.startsWith("/health")) {
       return next.handle();
     }
 
+    // Wrap response in data object for all other endpoints
     return next.handle().pipe(
-      map((data) => {
-        // If the response is already enveloped (has `data`), return as-is
-        if (
-          data &&
-          typeof data === "object" &&
-          Object.prototype.hasOwnProperty.call(data, "data")
-        ) {
+      map((data: T) => {
+        // Skip wrapping if response already has meta (paginated response)
+        if (data && typeof data === "object" && "meta" in data) {
           return data;
         }
-
-        // Otherwise, wrap it in { data: ... }
         return { data };
       }),
     );

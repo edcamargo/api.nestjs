@@ -1,17 +1,26 @@
-import { Injectable, Inject, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import type { IRoleAssignmentRepository } from '../../domain/interfaces/role-assignment.repository';
-import { ROLE_ASSIGNMENT_REPOSITORY } from '../../domain/interfaces/role-assignment.repository';
-import type { IRoleRepository } from '../../domain/interfaces/role.repository';
-import { ROLE_REPOSITORY } from '../../domain/interfaces/role.repository';
-import type { IEnvironmentPermissionRepository } from '../../domain/interfaces/environment-permission.repository';
-import { ENVIRONMENT_PERMISSION_REPOSITORY } from '../../domain/interfaces/environment-permission.repository';
-import { RoleAssignment, RoleAssignmentState } from '../../domain/role-assignment/role-assignment.entity';
-import { ROLE_ASSIGNMENT_ERRORS } from '../../domain/role-assignment';
-import { CreateRoleAssignmentDto } from '../dtos/create-role-assignment.dto';
-import { UpdateRoleAssignmentDto } from '../dtos/update-role-assignment.dto';
-import type { IUserRepository } from '../../domain/interfaces/user.repository';
-import { USER_REPOSITORY } from '../../domain/interfaces/user.repository';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from "@nestjs/common";
+import type { IRoleAssignmentRepository } from "../../domain/interfaces/role-assignment.repository";
+import { ROLE_ASSIGNMENT_REPOSITORY } from "../../domain/interfaces/role-assignment.repository";
+import type { IRoleRepository } from "../../domain/interfaces/role.repository";
+import { ROLE_REPOSITORY } from "../../domain/interfaces/role.repository";
+import type { IEnvironmentPermissionRepository } from "../../domain/interfaces/environment-permission.repository";
+import { ENVIRONMENT_PERMISSION_REPOSITORY } from "../../domain/interfaces/environment-permission.repository";
+import {
+  RoleAssignment,
+  RoleAssignmentState,
+} from "../../domain/role-assignment/role-assignment.entity";
+import { ROLE_ASSIGNMENT_ERRORS } from "../../domain/role-assignment";
+import { CreateRoleAssignmentDto } from "../dtos/create-role-assignment.dto";
+import { UpdateRoleAssignmentDto } from "../dtos/update-role-assignment.dto";
+import type { IUserRepository } from "../../domain/interfaces/user.repository";
+import { USER_REPOSITORY } from "../../domain/interfaces/user.repository";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class RoleAssignmentService {
@@ -24,7 +33,7 @@ export class RoleAssignmentService {
     private readonly roleRepository: IRoleRepository,
     @Inject(ENVIRONMENT_PERMISSION_REPOSITORY)
     private readonly environmentPermissionRepository: IEnvironmentPermissionRepository,
-  ) { }
+  ) {}
 
   async create(createDto: CreateRoleAssignmentDto): Promise<RoleAssignment> {
     // Validate user exists
@@ -61,7 +70,7 @@ export class RoleAssignmentService {
       startDate,
       endDate,
       createDto.state ?? RoleAssignmentState.ACTIVE,
-      createDto.notes ?? '',
+      createDto.notes ?? "",
       createDto.grantedBy,
       new Date(),
       new Date(),
@@ -75,14 +84,20 @@ export class RoleAssignmentService {
   }
 
   async findById(id: string, includeDeleted = false): Promise<RoleAssignment> {
-    const assignment = await this.roleAssignmentRepository.findById(id, includeDeleted);
+    const assignment = await this.roleAssignmentRepository.findById(
+      id,
+      includeDeleted,
+    );
     if (!assignment) {
       throw new NotFoundException(ROLE_ASSIGNMENT_ERRORS.NOT_FOUND);
     }
     return assignment;
   }
 
-  async findByUserId(userId: string, includeDeleted = false): Promise<RoleAssignment[]> {
+  async findByUserId(
+    userId: string,
+    includeDeleted = false,
+  ): Promise<RoleAssignment[]> {
     return this.roleAssignmentRepository.findByUserId(userId, includeDeleted);
   }
 
@@ -90,11 +105,20 @@ export class RoleAssignmentService {
     return this.roleAssignmentRepository.findActiveByUserId(userId);
   }
 
-  async findByGrantedBy(grantedBy: string, includeDeleted = false): Promise<RoleAssignment[]> {
-    return this.roleAssignmentRepository.findByGrantedBy(grantedBy, includeDeleted);
+  async findByGrantedBy(
+    grantedBy: string,
+    includeDeleted = false,
+  ): Promise<RoleAssignment[]> {
+    return this.roleAssignmentRepository.findByGrantedBy(
+      grantedBy,
+      includeDeleted,
+    );
   }
 
-  async update(id: string, updateDto: UpdateRoleAssignmentDto): Promise<RoleAssignment> {
+  async update(
+    id: string,
+    updateDto: UpdateRoleAssignmentDto,
+  ): Promise<RoleAssignment> {
     // Check if assignment exists
     const existingAssignment = await this.findById(id);
 
@@ -109,8 +133,12 @@ export class RoleAssignmentService {
     }
 
     // Validate date range if updating dates
-    const startDate = updateDto.startDate ? new Date(updateDto.startDate) : existingAssignment.startDate;
-    const endDate = updateDto.endDate ? new Date(updateDto.endDate) : existingAssignment.endDate;
+    const startDate = updateDto.startDate
+      ? new Date(updateDto.startDate)
+      : existingAssignment.startDate;
+    const endDate = updateDto.endDate
+      ? new Date(updateDto.endDate)
+      : existingAssignment.endDate;
 
     if (endDate && endDate <= startDate) {
       throw new BadRequestException(ROLE_ASSIGNMENT_ERRORS.INVALID_DATE_RANGE);
@@ -119,7 +147,9 @@ export class RoleAssignmentService {
     // Convert string dates to Date objects
     const updateData: Partial<RoleAssignment> = {
       ...updateDto,
-      startDate: updateDto.startDate ? new Date(updateDto.startDate) : undefined,
+      startDate: updateDto.startDate
+        ? new Date(updateDto.startDate)
+        : undefined,
       endDate: updateDto.endDate ? new Date(updateDto.endDate) : undefined,
     };
 
@@ -170,7 +200,7 @@ export class RoleAssignmentService {
 
     if (invalidRoleIds.length > 0) {
       throw new NotFoundException(
-        `The following role IDs were not found: ${invalidRoleIds.join(', ')}`
+        `The following role IDs were not found: ${invalidRoleIds.join(", ")}`,
       );
     }
   }
@@ -179,7 +209,9 @@ export class RoleAssignmentService {
    * Validates that all environment permission IDs exist in the database
    * @throws NotFoundException if any environment permission ID is not found
    */
-  private async validateEnvironmentPermissionIds(envPermIds: string[]): Promise<void> {
+  private async validateEnvironmentPermissionIds(
+    envPermIds: string[],
+  ): Promise<void> {
     if (!envPermIds || envPermIds.length === 0) {
       return;
     }
@@ -187,7 +219,8 @@ export class RoleAssignmentService {
     const invalidEnvPermIds: string[] = [];
 
     for (const envPermId of envPermIds) {
-      const envPerm = await this.environmentPermissionRepository.findById(envPermId);
+      const envPerm =
+        await this.environmentPermissionRepository.findById(envPermId);
       if (!envPerm) {
         invalidEnvPermIds.push(envPermId);
       }
@@ -195,7 +228,7 @@ export class RoleAssignmentService {
 
     if (invalidEnvPermIds.length > 0) {
       throw new NotFoundException(
-        `The following environment permission IDs were not found: ${invalidEnvPermIds.join(', ')}`
+        `The following environment permission IDs were not found: ${invalidEnvPermIds.join(", ")}`,
       );
     }
   }

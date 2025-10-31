@@ -8,7 +8,7 @@ export class Role {
     public createdAt: Date,
     public updatedAt: Date,
     public deletedAt?: Date | null,
-  ) { }
+  ) {}
 
   isActive(): boolean {
     return this.active && !this.deletedAt;
@@ -19,6 +19,6 @@ export class Role {
   }
 
   hasAnyAccessArea(areas: string[]): boolean {
-    return areas.some(area => this.accessAreas.includes(area));
+    return areas.some((area) => this.accessAreas.includes(area));
   }
 }

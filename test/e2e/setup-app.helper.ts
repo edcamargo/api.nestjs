@@ -1,6 +1,7 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { AllExceptionsFilter } from '../../src/presentation/filters/all-exceptions.filter';
-import { ResponseInterceptor } from '../../src/presentation/filters/response.interceptor';
+import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { AllExceptionsFilter } from "../../src/presentation/filters/all-exceptions.filter";
+import { ResponseInterceptor } from "../../src/presentation/filters/response.interceptor";
+import { LoggerService } from "../../src/infrastructure/observability/logger.service";
 
 /**
  * Setup the NestJS application with global pipes, filters, and interceptors
@@ -15,8 +16,11 @@ export function setupApp(app: INestApplication): void {
     }),
   );
 
+  // Get LoggerService from the app context
+  const loggerService = app.get(LoggerService);
+
   // Global exception filter to standardize error envelope
-  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalFilters(new AllExceptionsFilter(loggerService));
 
   // Global response interceptor to envelope successful responses as { data: ... }
   app.useGlobalInterceptors(new ResponseInterceptor());

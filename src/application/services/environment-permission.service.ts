@@ -1,13 +1,18 @@
-import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
-import type { IEnvironmentPermissionRepository } from '../../domain/interfaces/environment-permission.repository';
-import { ENVIRONMENT_PERMISSION_REPOSITORY } from '../../domain/interfaces/environment-permission.repository';
-import type { IRoleAssignmentRepository } from '../../domain/interfaces/role-assignment.repository';
-import { ROLE_ASSIGNMENT_REPOSITORY } from '../../domain/interfaces/role-assignment.repository';
-import { EnvironmentPermission } from '../../domain/environment-permission/environment-permission.entity';
-import { ENVIRONMENT_PERMISSION_ERRORS } from '../../domain/environment-permission';
-import { CreateEnvironmentPermissionDto } from '../dtos/create-environment-permission.dto';
-import { UpdateEnvironmentPermissionDto } from '../dtos/update-environment-permission.dto';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import type { IEnvironmentPermissionRepository } from "../../domain/interfaces/environment-permission.repository";
+import { ENVIRONMENT_PERMISSION_REPOSITORY } from "../../domain/interfaces/environment-permission.repository";
+import type { IRoleAssignmentRepository } from "../../domain/interfaces/role-assignment.repository";
+import { ROLE_ASSIGNMENT_REPOSITORY } from "../../domain/interfaces/role-assignment.repository";
+import { EnvironmentPermission } from "../../domain/environment-permission/environment-permission.entity";
+import { ENVIRONMENT_PERMISSION_ERRORS } from "../../domain/environment-permission";
+import { CreateEnvironmentPermissionDto } from "../dtos/create-environment-permission.dto";
+import { UpdateEnvironmentPermissionDto } from "../dtos/update-environment-permission.dto";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class EnvironmentPermissionService {
@@ -16,11 +21,15 @@ export class EnvironmentPermissionService {
     private readonly environmentPermissionRepository: IEnvironmentPermissionRepository,
     @Inject(ROLE_ASSIGNMENT_REPOSITORY)
     private readonly roleAssignmentRepository: IRoleAssignmentRepository,
-  ) { }
+  ) {}
 
-  async create(createDto: CreateEnvironmentPermissionDto): Promise<EnvironmentPermission> {
+  async create(
+    createDto: CreateEnvironmentPermissionDto,
+  ): Promise<EnvironmentPermission> {
     // Check if permission with same name already exists
-    const existing = await this.environmentPermissionRepository.findByName(createDto.name);
+    const existing = await this.environmentPermissionRepository.findByName(
+      createDto.name,
+    );
     if (existing) {
       throw new ConflictException(ENVIRONMENT_PERMISSION_ERRORS.ALREADY_EXISTS);
     }
@@ -42,27 +51,46 @@ export class EnvironmentPermissionService {
     return this.environmentPermissionRepository.findAll(includeDeleted);
   }
 
-  async findById(id: string, includeDeleted = false): Promise<EnvironmentPermission> {
-    const permission = await this.environmentPermissionRepository.findById(id, includeDeleted);
+  async findById(
+    id: string,
+    includeDeleted = false,
+  ): Promise<EnvironmentPermission> {
+    const permission = await this.environmentPermissionRepository.findById(
+      id,
+      includeDeleted,
+    );
     if (!permission) {
       throw new NotFoundException(ENVIRONMENT_PERMISSION_ERRORS.NOT_FOUND);
     }
     return permission;
   }
 
-  async findByProfile(profile: string, includeDeleted = false): Promise<EnvironmentPermission[]> {
-    return this.environmentPermissionRepository.findByProfile(profile, includeDeleted);
+  async findByProfile(
+    profile: string,
+    includeDeleted = false,
+  ): Promise<EnvironmentPermission[]> {
+    return this.environmentPermissionRepository.findByProfile(
+      profile,
+      includeDeleted,
+    );
   }
 
-  async update(id: string, updateDto: UpdateEnvironmentPermissionDto): Promise<EnvironmentPermission> {
+  async update(
+    id: string,
+    updateDto: UpdateEnvironmentPermissionDto,
+  ): Promise<EnvironmentPermission> {
     // Check if permission exists
     await this.findById(id);
 
     // If updating name, check for duplicates
     if (updateDto.name) {
-      const existing = await this.environmentPermissionRepository.findByName(updateDto.name);
+      const existing = await this.environmentPermissionRepository.findByName(
+        updateDto.name,
+      );
       if (existing && existing.id !== id) {
-        throw new ConflictException(ENVIRONMENT_PERMISSION_ERRORS.ALREADY_EXISTS);
+        throw new ConflictException(
+          ENVIRONMENT_PERMISSION_ERRORS.ALREADY_EXISTS,
+        );
       }
     }
 
@@ -79,7 +107,10 @@ export class EnvironmentPermissionService {
   }
 
   async restore(id: string): Promise<EnvironmentPermission> {
-    const permission = await this.environmentPermissionRepository.findById(id, true);
+    const permission = await this.environmentPermissionRepository.findById(
+      id,
+      true,
+    );
     if (!permission) {
       throw new NotFoundException(ENVIRONMENT_PERMISSION_ERRORS.NOT_FOUND);
     }
@@ -107,16 +138,20 @@ export class EnvironmentPermissionService {
    * @param includeDeleted - Whether to check deleted assignments as well
    * @throws ConflictException if environment permission is being used
    */
-  private async validateEnvironmentPermissionNotInUse(envPermId: string, includeDeleted = false): Promise<void> {
-    const allAssignments = await this.roleAssignmentRepository.findAll(includeDeleted);
+  private async validateEnvironmentPermissionNotInUse(
+    envPermId: string,
+    includeDeleted = false,
+  ): Promise<void> {
+    const allAssignments =
+      await this.roleAssignmentRepository.findAll(includeDeleted);
 
-    const assignmentsUsingEnvPerm = allAssignments.filter(assignment =>
-      assignment.accessEnvironments.includes(envPermId)
+    const assignmentsUsingEnvPerm = allAssignments.filter((assignment) =>
+      assignment.accessEnvironments.includes(envPermId),
     );
 
     if (assignmentsUsingEnvPerm.length > 0) {
       throw new ConflictException(
-        `Cannot delete environment permission: it is currently being used in ${assignmentsUsingEnvPerm.length} role assignment(s)`
+        `Cannot delete environment permission: it is currently being used in ${assignmentsUsingEnvPerm.length} role assignment(s)`,
       );
     }
   }

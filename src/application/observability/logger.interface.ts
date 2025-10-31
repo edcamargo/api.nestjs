@@ -1,4 +1,4 @@
-import { LoggerService as NestLoggerService } from '@nestjs/common';
+import { LoggerService as NestLoggerService } from "@nestjs/common";
 
 /**
  * Interface para o serviço de logging
@@ -14,8 +14,17 @@ export interface ILogger extends NestLoggerService {
 
   // Métodos customizados
   info(message: string, context?: string, meta?: object): void;
-  logRequest(method: string, url: string, statusCode: number, responseTime: number): void;
-  logAuth(userId: string, email: string, action: 'login' | 'logout' | 'token_refresh'): void;
+  logRequest(
+    method: string,
+    url: string,
+    statusCode: number,
+    responseTime: number,
+  ): void;
+  logAuth(
+    userId: string,
+    email: string,
+    action: "login" | "logout" | "token_refresh",
+  ): void;
   logDatabase(operation: string, table: string, duration: number): void;
   logError(error: Error, context?: string): void;
 }
@@ -23,4 +32,4 @@ export interface ILogger extends NestLoggerService {
 /**
  * Token de injeção para o LoggerService
  */
-export const LOGGER = Symbol('LOGGER');
+export const LOGGER = Symbol("LOGGER");

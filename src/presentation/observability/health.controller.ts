@@ -1,57 +1,103 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { Public } from '../auth';
+import { Controller, Get } from "@nestjs/common";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
+import { Public } from "../auth/public.decorator";
+import { PrismaService } from "../../infrastructure/database/prisma.service";
 
-@ApiTags('Health')
-@Controller('health')
+@ApiTags("Observability")
+@Controller("health")
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) { }
-
-  @Public()
+  constructor(private readonly prisma: PrismaService) {}
   @Get()
-  @ApiOperation({ summary: 'Health check - liveness probe' })
-  @ApiResponse({ status: 200, description: 'Service is healthy' })
-  async healthCheck() {
+  @Public()
+  @ApiOperation({ summary: "Health check endpoint" })
+  healthCheck(): {
+    status: string;
+    timestamp: string;
+    uptime: number;
+    memory: NodeJS.MemoryUsage;
+    environment: string;
+  } {
     return {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
+      memory: process.memoryUsage(),
+      environment: process.env.NODE_ENV || "development",
     };
   }
 
+  @Get("live")
   @Public()
-  @Get('ready')
-  @ApiOperation({ summary: 'Readiness check - database connection' })
-  @ApiResponse({ status: 200, description: 'Service is ready' })
-  @ApiResponse({ status: 503, description: 'Service is not ready' })
-  async readinessCheck() {
-    try {
-      await this.prisma.$queryRaw`SELECT 1`;
-      return {
-        status: 'ready',
-        timestamp: new Date().toISOString(),
-        checks: {
-          database: 'ok',
-        },
-      };
-    } catch (error) {
-      return {
-        status: 'not_ready',
-        timestamp: new Date().toISOString(),
-        checks: {
-          database: 'error',
-        },
-      };
-    }
+  @ApiOperation({ summary: "Liveness probe" })
+  liveness(): { status: string } {
+    return { status: "ok" };
   }
 
+  @Get("ready")
   @Public()
-  @Get('metrics')
-  @ApiOperation({ summary: 'Application metrics' })
-  @ApiResponse({ status: 200, description: 'Current metrics' })
-  async metrics() {
+  @ApiOperation({ summary: "Readiness probe" })
+  async readiness(): Promise<{
+    status: string;
+    timestamp: string;
+    checks: { database: string };
+  }> {
+    let databaseStatus = "ok";
+
+    try {
+      // Test database connection
+      await this.prisma.$queryRaw`SELECT 1`;
+    } catch {
+      databaseStatus = "error";
+    }
+
+    return {
+      status: databaseStatus === "ok" ? "ready" : "not_ready",
+      timestamp: new Date().toISOString(),
+      checks: {
+        database: databaseStatus,
+      },
+    };
+  }
+
+  @Get("readiness")
+  @Public()
+  @ApiOperation({ summary: "Readiness check with database verification" })
+  async readinessCheck(): Promise<{
+    status: string;
+    timestamp: string;
+    checks: { database: string };
+  }> {
+    return this.readiness();
+  }
+
+  @Get("version")
+  @Public()
+  @ApiOperation({ summary: "API version" })
+  version(): { version: string; node: string } {
+    return {
+      version: process.env.npm_package_version || "1.0.0",
+      node: process.version,
+    };
+  }
+
+  @Get("metrics")
+  @Public()
+  @ApiOperation({ summary: "Basic metrics" })
+  metrics(): {
+    timestamp: string;
+    uptime: number;
+    memory: {
+      rss: string;
+      heapTotal: string;
+      heapUsed: string;
+      external: string;
+    };
+    process: {
+      pid: number;
+      nodeVersion: string;
+      platform: NodeJS.Platform;
+    };
+  } {
     const memoryUsage = process.memoryUsage();
     return {
       timestamp: new Date().toISOString(),
