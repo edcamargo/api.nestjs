@@ -43,9 +43,9 @@ export class RoleAssignmentController {
   @ApiResponse({ status: 400, description: "Invalid date range" })
   async create(
     @Body() createDto: CreateRoleAssignmentDto,
-  ): Promise<{ data: RoleAssignmentResponseDto }> {
+  ): Promise<RoleAssignmentResponseDto> {
     const assignment = await this.roleAssignmentService.create(createDto);
-    return { data: RoleAssignmentMapper.toResponse(assignment) };
+    return RoleAssignmentMapper.toResponse(assignment);
   }
 
   @Get()
@@ -59,11 +59,11 @@ export class RoleAssignmentController {
   })
   async findAll(
     @Query("includeDeleted") includeDeleted?: string,
-  ): Promise<{ data: RoleAssignmentResponseDto[] }> {
+  ): Promise<RoleAssignmentResponseDto[]> {
     const assignments = await this.roleAssignmentService.findAll(
       includeDeleted === "true",
     );
-    return { data: RoleAssignmentMapper.toResponseArray(assignments) };
+    return RoleAssignmentMapper.toResponseArray(assignments);
   }
 
   @Get("user/:userId")
@@ -76,9 +76,9 @@ export class RoleAssignmentController {
   })
   async findByUserId(
     @Param("userId") userId: string,
-  ): Promise<{ data: RoleAssignmentResponseDto[] }> {
+  ): Promise<RoleAssignmentResponseDto[]> {
     const assignments = await this.roleAssignmentService.findByUserId(userId);
-    return { data: RoleAssignmentMapper.toResponseArray(assignments) };
+    return RoleAssignmentMapper.toResponseArray(assignments);
   }
 
   @Get("user/:userId/active")
@@ -91,10 +91,10 @@ export class RoleAssignmentController {
   })
   async findActiveByUserId(
     @Param("userId") userId: string,
-  ): Promise<{ data: RoleAssignmentResponseDto[] }> {
+  ): Promise<RoleAssignmentResponseDto[]> {
     const assignments =
       await this.roleAssignmentService.findActiveByUserId(userId);
-    return { data: RoleAssignmentMapper.toResponseArray(assignments) };
+    return RoleAssignmentMapper.toResponseArray(assignments);
   }
 
   @Get(":id")
@@ -106,11 +106,9 @@ export class RoleAssignmentController {
     type: RoleAssignmentResponseDto,
   })
   @ApiResponse({ status: 404, description: "Role assignment not found" })
-  async findById(
-    @Param("id") id: string,
-  ): Promise<{ data: RoleAssignmentResponseDto }> {
+  async findById(@Param("id") id: string): Promise<RoleAssignmentResponseDto> {
     const assignment = await this.roleAssignmentService.findById(id);
-    return { data: RoleAssignmentMapper.toResponse(assignment) };
+    return RoleAssignmentMapper.toResponse(assignment);
   }
 
   @Put(":id")
@@ -126,9 +124,9 @@ export class RoleAssignmentController {
   async update(
     @Param("id") id: string,
     @Body() updateDto: UpdateRoleAssignmentDto,
-  ): Promise<{ data: RoleAssignmentResponseDto }> {
+  ): Promise<RoleAssignmentResponseDto> {
     const assignment = await this.roleAssignmentService.update(id, updateDto);
-    return { data: RoleAssignmentMapper.toResponse(assignment) };
+    return RoleAssignmentMapper.toResponse(assignment);
   }
 
   @Delete(":id")
@@ -154,11 +152,9 @@ export class RoleAssignmentController {
     type: RoleAssignmentResponseDto,
   })
   @ApiResponse({ status: 404, description: "Role assignment not found" })
-  async restore(
-    @Param("id") id: string,
-  ): Promise<{ data: RoleAssignmentResponseDto }> {
+  async restore(@Param("id") id: string): Promise<RoleAssignmentResponseDto> {
     const assignment = await this.roleAssignmentService.restore(id);
-    return { data: RoleAssignmentMapper.toResponse(assignment) };
+    return RoleAssignmentMapper.toResponse(assignment);
   }
 
   @Delete(":id/hard")
