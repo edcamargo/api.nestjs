@@ -9,6 +9,9 @@ import {
   HttpCode,
   Query,
   UseGuards,
+  DefaultValuePipe,
+  ParseBoolPipe,
+  ParseIntPipe,
 } from "@nestjs/common";
 import { UserService } from "../../application/services/user.service";
 import { CreateUserDto } from "../../application/dtos/create-user.dto";
@@ -23,6 +26,7 @@ import {
   ApiBearerAuth,
 } from "@nestjs/swagger";
 import { UserResponseDto } from "../../application/dtos/user-response.dto";
+import { PagedUserResponseDto } from '../../application/dtos/paged-user-response.dto';
 import { Roles, Public } from "../auth";
 import { RolesGuard, JwtAuthGuard } from "../../infrastructure/auth";
 import { UserRole } from "../../domain/user/user.entity";
@@ -30,7 +34,7 @@ import { UserRole } from "../../domain/user/user.entity";
 @ApiTags("Users")
 @Controller("api/users")
 @UseGuards(JwtAuthGuard, RolesGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 export class UserController {
   constructor(private readonly service: UserService) { }
 
@@ -53,11 +57,32 @@ export class UserController {
     type: Boolean,
     description: "Include soft deleted users",
   })
-  @ApiResponse({ status: 200, description: "List of users", type: [UserResponseDto] })
-  async findAll(@Query("includeDeleted") includeDeleted?: string) {
-    const include = includeDeleted === "true";
-    const users = await this.service.findAll(include);
-    return users.map((u) => instanceToPlain(toResponse(u)));
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (1-based)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'perPage',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+    example: 10,
+  })
+  @ApiResponse({ status: 200, description: "List of users", type: PagedUserResponseDto })
+  async findAll(
+    @Query('includeDeleted') includeDeleted?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
+    @Query('perPage', new DefaultValuePipe(10), ParseIntPipe) perPage = 10,
+  ) {
+    const result = await this.service.findAll(includeDeleted, page, perPage);
+    const payload = {
+      data: result.data.map((u) => instanceToPlain(toResponse(u))),
+      meta: result.meta,
+    };
+    return payload;
   }
 
   @Get(":id")

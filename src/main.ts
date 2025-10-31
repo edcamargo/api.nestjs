@@ -8,6 +8,18 @@ import { ResponseInterceptor } from "./presentation/filters/response.interceptor
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Parse cookies so we can accept tokens via cookies when needed.
+  // Try to require cookie-parser if it's installed; if not, continue without failing.
+  // If you want cookie support, install with: npm install cookie-parser
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const cookieParser = require('cookie-parser');
+    app.use(cookieParser());
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('cookie-parser not installed; cookie-based token extraction will be disabled. To enable it run: npm install cookie-parser');
+  }
+
   // Global validation pipe: whitelist incoming payloads and transform types
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 

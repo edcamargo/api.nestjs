@@ -9,7 +9,7 @@ import { Roles } from '../auth';
 import { UserRole } from '../../domain/user/user.entity';
 
 @ApiTags('Roles')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @Controller('roles')
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}

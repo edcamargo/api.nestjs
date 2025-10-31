@@ -28,6 +28,7 @@ export class RolesGuard implements CanActivate {
     if (isPublic) {
       return true;
     }
+
     // Get required roles from @Roles() decorator
     const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
       "roles",
@@ -42,20 +43,8 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user: IAuthenticatedUser = request.user;
 
-    const LOG_AUTH = process.env.LOG_AUTH === "true";
-
-    // Debug logging to help diagnose ordering issues between JwtAuthGuard and RolesGuard
-    if (LOG_AUTH) {
-      // eslint-disable-next-line no-console
-      console.log("[RolesGuard] requiredRoles:", requiredRoles, "request.user:", user);
-    }
-
-    // If user is not set, respond with 401 (not authenticated)
+    // If user is not set, authentication is required
     if (!user) {
-      if (LOG_AUTH) {
-        // eslint-disable-next-line no-console
-        console.log("[RolesGuard] request.user is undefined. JwtAuthGuard may not have run or failed.");
-      }
       throw new UnauthorizedException("Authentication required");
     }
 

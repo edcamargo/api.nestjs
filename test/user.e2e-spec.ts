@@ -39,6 +39,15 @@ describe('UserController (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
 
-    expect(Array.isArray(usersRes.body?.data || usersRes.body)).toBe(true);
+    // response should have { data: User[], meta: { total, page, perPage, totalPages } }
+    const body = usersRes.body;
+    const data = body?.data || [];
+    const meta = body?.meta || {};
+
+    expect(Array.isArray(data)).toBe(true);
+    expect(typeof meta.total).toBe('number');
+    expect(typeof meta.page).toBe('number');
+    expect(typeof meta.perPage).toBe('number');
+    expect(typeof meta.totalPages).toBe('number');
   });
 });

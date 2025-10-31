@@ -9,7 +9,7 @@ import { Roles } from '../auth';
 import { UserRole } from '../../domain/user/user.entity';
 
 @ApiTags('Environment Permissions')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @Controller('environment-permissions')
 export class EnvironmentPermissionController {
   constructor(private readonly environmentPermissionService: EnvironmentPermissionService) {}

@@ -34,11 +34,21 @@ export class UserRepository implements IUserRepository {
     return this.toDomain(saved);
   }
 
-  async findAll(includeDeleted = false): Promise<User[]> {
+  async findAll(includeDeleted = false, page = 1, perPage = 10): Promise<User[]> {
+    const skip = Math.max(0, page - 1) * Math.max(1, perPage);
     const entities = await this.prisma.user.findMany({
       where: includeDeleted ? {} : { deletedAt: null },
+      skip,
+      take: perPage,
+      orderBy: { createdAt: 'desc' },
     });
     return entities.map((e) => this.toDomain(e));
+  }
+
+  async count(includeDeleted = false): Promise<number> {
+    return this.prisma.user.count({
+      where: includeDeleted ? {} : { deletedAt: null },
+    });
   }
 
   async findById(id: string, includeDeleted = false): Promise<User | null> {

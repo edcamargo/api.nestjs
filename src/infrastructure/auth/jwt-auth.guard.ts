@@ -27,57 +27,42 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
       return true;
     }
 
-    const result = super.canActivate(context);
-    const LOG_AUTH = process.env.LOG_AUTH === "true";
-
-    // If super.canActivate returns a promise, attach logging when resolved
-    if (result && typeof (result as Promise<boolean>).then === "function") {
-      return (result as Promise<boolean>).then((res) => {
-        // attempt to log user if available
-        try {
-          if (LOG_AUTH) {
-            const req = context.switchToHttp().getRequest();
-            // eslint-disable-next-line no-console
-            console.log("[JwtAuthGuard] canActivate result:", res, "user:", req.user);
-          }
-        } catch (e) {
-          // ignore logging errors
-        }
-        return res;
-      });
-    }
-
+    // Support token from header, query params, or cookies
     try {
-      if (LOG_AUTH) {
-        const req = context.switchToHttp().getRequest();
-        // eslint-disable-next-line no-console
-        console.log("[JwtAuthGuard] canActivate result:", result, "user:", req.user);
+      const req = context.switchToHttp().getRequest();
+      const headers = req.headers || {};
+      
+      // Read from authorization header or x-access-token header
+      let header = headers.authorization || headers['x-access-token'];
+      if (Array.isArray(header)) header = header[0];
+
+      // Also support tokens via query params or cookies
+      const q = req.query || {};
+      const qToken = q.authorization || q.access_token || q.token;
+      const c = req.cookies || {};
+      const cToken = c.authToken || c.token || c.access_token;
+
+      // Prefer header, otherwise query, otherwise cookie
+      const rawToken = header || qToken || cToken;
+
+      if (rawToken && typeof rawToken === 'string') {
+        const trimmed = rawToken.trim().replace(/^Bearer\s+/i, '');
+        req.headers = req.headers || {};
+        req.headers.authorization = `Bearer ${trimmed}`;
       }
     } catch (e) {
-      // ignore logging errors
+      // Ignore extraction errors and let passport handle missing token
     }
 
-    return result;
+    return super.canActivate(context);
   }
 
-  // Override handleRequest to log the passport result for easier debugging
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
-    const LOG_AUTH = process.env.LOG_AUTH === "true";
-
-    if (LOG_AUTH) {
-      // eslint-disable-next-line no-console
-      console.log("[JwtAuthGuard] handleRequest -> err:", err, "user:", user, "info:", info);
-    }
-
-    // If passport returned an error, bubble it up
+  handleRequest(err: any, user: any, info: any) {
     if (err) {
       throw err;
     }
 
-    // If there's no authenticated user, throw a 401 with the passport info message
     if (!user) {
-      // info may be an Error from passport-jwt with message like 'No auth token'
       throw new UnauthorizedException(info?.message || "Unauthorized");
     }
 

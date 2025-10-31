@@ -1,4 +1,5 @@
-import { Body, Controller, Post, HttpCode, HttpStatus } from "@nestjs/common";
+import { Body, Controller, Post, HttpCode, HttpStatus, Res } from "@nestjs/common";
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { AuthService } from "../../application/auth";
 import { LoginDto, AuthResponseDto } from "../../application/auth";
@@ -30,7 +31,31 @@ export class AuthController {
     status: 401,
     description: "Invalid credentials",
   })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res?: Response): Promise<AuthResponseDto> {
+    const auth = await this.authService.login(loginDto);
+
+    // If configured, set cookie with access token to simplify Swagger/dev testing.
+    // Controlled by SET_COOKIE_ON_LOGIN env var. To enable Swagger auto-send, set SET_COOKIE_ON_LOGIN=true and COOKIE_HTTPONLY=false
+    try {
+      if (process.env.SET_COOKIE_ON_LOGIN === "true" && res) {
+        const token = auth?.accessToken ?? (auth as any)?.data?.accessToken ?? null;
+        if (token) {
+          const cookieHttpOnly = process.env.COOKIE_HTTPONLY === 'true';
+          const maxAge = Number(process.env.COOKIE_MAX_AGE) || 24 * 60 * 60 * 1000;
+          res.cookie('access_token', token, {
+            httpOnly: cookieHttpOnly,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            maxAge,
+          });
+        }
+      }
+    } catch (e) {
+      // don't fail login if cookie setting fails
+      // eslint-disable-next-line no-console
+      console.warn('Failed to set cookie on login:', e instanceof Error ? e.message : e);
+    }
+
+    return auth;
   }
 }
