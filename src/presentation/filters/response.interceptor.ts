@@ -26,9 +26,13 @@ export class ResponseInterceptor<T>
 
     // Wrap response in data object for all other endpoints
     return next.handle().pipe(
-      map((data: T) => ({
-        data,
-      })),
+      map((data: T) => {
+        // Skip wrapping if response already has meta (paginated response)
+        if (data && typeof data === "object" && "meta" in data) {
+          return data;
+        }
+        return { data };
+      }),
     );
   }
 }
