@@ -4,7 +4,12 @@ on:
   pull_request:
     branches: [develop, main]
   push:
-    branches: [develop]  # Apenas develop recebe push direto
+    branches:
+      - develop
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
+      - cicd
 
 jobs:
   lint:

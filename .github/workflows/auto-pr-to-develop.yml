@@ -1,0 +1,77 @@
+name: Auto PR to Develop
+
+on:
+  push:
+    branches-ignore:
+      - develop
+      - main
+
+jobs:
+  create-pr:
+    name: Create PR to Develop
+    runs-on: ubuntu-latest
+    # Only run if CI checks passed
+    if: success()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if PR already exists
+        id: check_pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_EXISTS=$(gh pr list --base develop --head ${{ github.ref_name }} --json number --jq length)
+          echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.check_pr.outputs.pr_exists == '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get branch name
+          BRANCH_NAME="${{ github.ref_name }}"
+          
+          # Create PR title from branch name
+          PR_TITLE=$(echo "$BRANCH_NAME" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+          
+          # Create PR body
+          PR_BODY="## 🤖 Automated Pull Request
+
+          This PR was automatically created by GitHub Actions.
+
+          ### Changes
+          - Branch: \`$BRANCH_NAME\`
+          - Latest commit: ${{ github.sha }}
+          - Author: @${{ github.actor }}
+
+          ### CI Status
+          ✅ All checks passed successfully
+
+          ### Next Steps
+          - Review the changes
+          - Approve and merge to \`develop\`
+          - Automated deployment to staging will follow
+
+          ---
+          *This PR was automatically generated. Please review before merging.*"
+
+          # Create the PR
+          gh pr create \
+            --base develop \
+            --head "$BRANCH_NAME" \
+            --title "🚀 $PR_TITLE" \
+            --body "$PR_BODY" \
+            --label "automated-pr,ready-for-review"
+
+      - name: Comment on PR
+        if: steps.check_pr.outputs.pr_exists == '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sleep 2
+          PR_NUMBER=$(gh pr list --base develop --head ${{ github.ref_name }} --json number --jq '.[0].number')
+          gh pr comment $PR_NUMBER --body "✅ CI checks passed! This PR is ready for review."
