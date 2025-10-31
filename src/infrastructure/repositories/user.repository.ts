@@ -101,8 +101,10 @@ export class UserRepository implements IUserRepository {
       data.password = user.password;
     }
 
+    // Prisma returns any
     const updated = await this.prisma.user.update({
       where: { id: user.id },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data,
     });
     return this.toDomain(updated);

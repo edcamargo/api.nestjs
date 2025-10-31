@@ -26,6 +26,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // Global exception filter to standardize error envelope
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const loggerService = app.get("LoggerService");
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   app.useGlobalFilters(new AllExceptionsFilter(loggerService));
@@ -99,6 +100,7 @@ async function bootstrap() {
           responseObj.content["application/json"].schema = {
             type: "object",
             properties: {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
               data: originalSchema,
             },
             required: ["data"],
@@ -127,6 +129,7 @@ async function bootstrap() {
         responseObj.content["application/json"].schema = {
           type: "object",
           properties: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             data: originalSchema,
           },
           required: ["data"],
@@ -178,4 +181,4 @@ async function bootstrap() {
   void startWithRetries(preferredPort, 5);
 }
 
-bootstrap();
+void bootstrap();

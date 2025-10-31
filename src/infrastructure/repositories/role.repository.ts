@@ -81,8 +81,10 @@ export class RoleRepository implements IRoleRepository {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     delete data.deletedAt;
 
+    // Prisma returns any
     const updated = await this.prisma.role.update({
       where: { id },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data,
     });
 
