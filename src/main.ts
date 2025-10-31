@@ -4,6 +4,7 @@ import { AppModule } from "./app.module";
 import { AllExceptionsFilter } from "./presentation/filters/all-exceptions.filter";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ResponseInterceptor } from "./presentation/filters/response.interceptor";
+import { LoggerService } from "./infrastructure/observability/logger.service";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -26,9 +27,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // Global exception filter to standardize error envelope
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const loggerService = app.get("LoggerService");
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  const loggerService = app.get(LoggerService);
   app.useGlobalFilters(new AllExceptionsFilter(loggerService));
 
   // Global response interceptor to envelope successful responses as { data: ... }
