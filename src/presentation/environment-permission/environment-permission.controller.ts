@@ -66,6 +66,7 @@ export class EnvironmentPermissionController {
 
   @Post(':id/restore')
   @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Restore deleted environment permission' })
   @ApiResponse({ status: 200, description: 'Environment permission restored successfully', type: EnvironmentPermissionResponseDto })
   @ApiResponse({ status: 404, description: 'Environment permission not found' })

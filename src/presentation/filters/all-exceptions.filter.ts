@@ -53,6 +53,25 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
     };
 
+    // Don't wrap errors for /auth and /health endpoints
+    // These endpoints use a simpler error format
+    const path = request.url;
+    if (path.startsWith('/auth') || path.startsWith('/health')) {
+      const simpleError: any = {
+        statusCode: status,
+        message: message || 'Error',
+        timestamp: errorPayload.timestamp,
+        path: request.url,
+      };
+      
+      if (details) {
+        simpleError.details = details;
+      }
+      
+      response.status(status).json(simpleError);
+      return;
+    }
+
     // Return the error wrapped inside { data: ... } to keep successful and
     // error responses consistent (both under the `data` key).
     response.status(status).json({ data: errorPayload });

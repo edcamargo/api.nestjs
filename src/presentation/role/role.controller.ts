@@ -75,6 +75,7 @@ export class RoleController {
 
   @Post(':id/restore')
   @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Restore deleted role' })
   @ApiResponse({ status: 200, description: 'Role restored successfully', type: RoleResponseDto })
   @ApiResponse({ status: 404, description: 'Role not found' })

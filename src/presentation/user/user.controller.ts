@@ -7,6 +7,7 @@ import {
   Put,
   Delete,
   HttpCode,
+  HttpStatus,
   Query,
   UseGuards,
   DefaultValuePipe,
@@ -124,6 +125,7 @@ export class UserController {
 
   @Roles(UserRole.ADMIN)
   @Post(":id/restore")
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Restore a soft deleted user" })
   @ApiResponse({ status: 200, description: "User successfully restored", type: UserResponseDto })
   @ApiResponse({ status: 404, description: "User not found" })

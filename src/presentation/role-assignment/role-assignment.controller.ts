@@ -86,6 +86,7 @@ export class RoleAssignmentController {
 
   @Post(':id/restore')
   @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Restore deleted role assignment' })
   @ApiResponse({ status: 200, description: 'Role assignment restored successfully', type: RoleAssignmentResponseDto })
   @ApiResponse({ status: 404, description: 'Role assignment not found' })

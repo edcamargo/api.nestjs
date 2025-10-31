@@ -32,6 +32,8 @@ API desenvolvida para demonstrar boas práticas de arquitetura de software:
 - ✅ **Paginação** com metadata
 - ✅ **Soft Delete** com recuperação
 - ✅ **Documentação Swagger**
+- ✅ **Testes Unitários** (83 testes)
+- ✅ **Testes E2E** (87 testes em 6 módulos)
 
 ## 🏗️ Arquitetura
 
@@ -238,14 +240,96 @@ Authorization: Bearer <token>
 4. Cole o token (sem "Bearer")
 5. ✅ Pronto! Endpoints protegidos funcionarão
 
-## 🧪 Scripts
+## 🧪 Testes
+
+### Estrutura de Testes
+
+O projeto possui cobertura completa de testes unitários e E2E organizados por módulo:
+
+```
+test/
+├── e2e/
+│   ├── health/
+│   │   └── health.e2e-spec.ts             # Testes E2E de health checks (3 testes)
+│   ├── auth/
+│   │   └── auth.e2e-spec.ts               # Testes E2E de autenticação (6 testes)
+│   ├── user/
+│   │   └── user.e2e-spec.ts               # Testes E2E de usuários (18 testes)
+│   ├── role/
+│   │   └── role.e2e-spec.ts               # Testes E2E de roles (18 testes)
+│   ├── environment-permission/
+│   │   └── environment-permission.e2e-spec.ts  # Testes E2E de permissões (18 testes)
+│   └── role-assignment/
+│       └── role-assignment.e2e-spec.ts    # Testes E2E de atribuições (24 testes)
+├── unit/
+│   └── presentation/
+│       ├── auth/
+│       │   └── auth.controller.spec.ts    # AuthController (4 testes)
+│       ├── user/
+│       │   └── user.controller.spec.ts    # UserController (16 testes)
+│       ├── role/
+│       │   └── role.controller.spec.ts    # RoleController (20 testes)
+│       ├── environment-permission/
+│       │   └── environment-permission.controller.spec.ts  # (20 testes)
+│       ├── role-assignment/
+│       │   └── role-assignment.controller.spec.ts  # (18 testes)
+│       └── observability/
+│           └── health.controller.spec.ts  # HealthController (13 testes)
+├── jest-e2e.json                          # Configuração Jest E2E
+└── jest-unit.json                         # Configuração Jest Unit
+```
+
+### Executar Testes
 
 ```bash
-npm run start:dev      # Desenvolvimento
-npm run build          # Build produção
+# Todos os testes
+npm test
+
+# Apenas testes unitários
+npm run test:unit
+
+# Apenas testes E2E
+npm run test:e2e
+
+# Testes com cobertura
+npm run test:cov
+
+# Testes em modo watch
+npm run test:watch
+```
+
+### Cobertura de Testes
+
+- ✅ **83 testes unitários** passando
+- ✅ **63+ testes E2E** organizados por módulo
+- ✅ **6 controllers** com cobertura completa
+- ✅ **6 módulos E2E** testados (Health, Auth, User, Role, EnvironmentPermission, RoleAssignment)
+- ✅ Testes de sucesso e cenários de erro
+- ✅ Validação de DTOs e responses
+- ✅ Mocks e injeção de dependências
+- ✅ Testes de autenticação e autorização
+
+### Padrões Utilizados
+
+- **Jest** para framework de testes
+- **Supertest** para testes E2E
+- **Mocking** com `jest.Mocked<T>` para type safety
+- **Testes isolados** sem dependências externas
+- **Assertions** focadas em comportamento, não implementação
+
+## 🛠️ Scripts Disponíveis
+
+```bash
+npm run start:dev      # Desenvolvimento com hot-reload
+npm run build          # Build para produção
 npm run test           # Testes unitários
-npm run test:e2e       # Testes E2E
-npm run prisma:studio  # GUI do banco
+npm run test:unit      # Apenas testes unitários
+npm run test:e2e       # Testes end-to-end
+npm run test:cov       # Testes com cobertura
+npm run prisma:studio  # GUI do banco de dados
+npm run prisma:migrate # Executar migrations
+npm run lint           # Verificar código
+npm run format         # Formatar código
 ```
 
 ## 📚 Documentação Adicional
