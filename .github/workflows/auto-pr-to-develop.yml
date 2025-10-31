@@ -1,40 +1,37 @@
 name: Auto PR to Develop
 
 on:
-  workflow_run:
-    workflows: ["CI Pipeline"]
-    types:
-      - completed
-    branches:
-      - 'feature/**'
-      - 'bugfix/**'
-      - 'hotfix/**'
+  check_suite:
+    types: [completed]
 
 jobs:
   create-pr:
     name: Create PR to Develop
     runs-on: ubuntu-latest
-    # Only run if CI workflow succeeded
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Only run if all checks passed and it's a valid branch
+    if: |
+      github.event.check_suite.conclusion == 'success' &&
+      github.event.check_suite.head_branch != 'develop' &&
+      github.event.check_suite.head_branch != 'main'
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: ${{ github.event.check_suite.head_branch }}
           fetch-depth: 0
 
       - name: Validate branch name
         id: validate
         run: |
-          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+          BRANCH_NAME="${{ github.event.check_suite.head_branch }}"
           
           if [[ "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix)/.+ ]]; then
             echo "valid=true" >> $GITHUB_OUTPUT
             echo "✅ Branch name '$BRANCH_NAME' follows the pattern"
           else
             echo "valid=false" >> $GITHUB_OUTPUT
-            echo "❌ Branch name '$BRANCH_NAME' does not follow the pattern (feature/*, bugfix/*, hotfix/*)"
+            echo "⚠️ Branch name '$BRANCH_NAME' does not follow the pattern - skipping PR creation"
             exit 0
           fi
 
@@ -44,8 +41,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_EXISTS=$(gh pr list --base develop --head ${{ github.event.workflow_run.head_branch }} --json number --jq length)
+          PR_EXISTS=$(gh pr list --base develop --head ${{ github.event.check_suite.head_branch }} --json number --jq length)
           echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
+          echo "PR exists: $PR_EXISTS"
 
       - name: Create Pull Request
         if: steps.validate.outputs.valid == 'true' && steps.check_pr.outputs.pr_exists == '0'
@@ -53,7 +51,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get branch name
-          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+          BRANCH_NAME="${{ github.event.check_suite.head_branch }}"
           
           # Extract type and name from branch
           BRANCH_TYPE=$(echo "$BRANCH_NAME" | cut -d'/' -f1)
@@ -73,13 +71,13 @@ jobs:
           # Create PR body
           PR_BODY="## $EMOJI Automated Pull Request - ${BRANCH_TYPE^}
 
-          This PR was automatically created after CI checks passed.
+          This PR was automatically created after all CI checks passed.
 
           ### 📋 Details
           - **Type**: \`$BRANCH_TYPE\`
           - **Branch**: \`$BRANCH_NAME\`
-          - **Latest commit**: ${{ github.event.workflow_run.head_sha }}
-          - **Author**: @${{ github.event.workflow_run.actor.login }}
+          - **Latest commit**: ${{ github.event.check_suite.head_sha }}
+          - **Author**: @${{ github.event.sender.login }}
 
           ### ✅ CI Status
           All checks passed successfully:
@@ -110,8 +108,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           sleep 2
-          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+          BRANCH_NAME="${{ github.event.check_suite.head_branch }}"
           PR_NUMBER=$(gh pr list --base develop --head "$BRANCH_NAME" --json number --jq '.[0].number')
           if [ -n "$PR_NUMBER" ]; then
-            gh pr comment $PR_NUMBER --body "✅ CI checks passed! This PR is ready for review."
+            gh pr comment $PR_NUMBER --body "✅ All CI checks passed! This PR is ready for review."
           fi
