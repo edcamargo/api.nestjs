@@ -5,6 +5,9 @@
 [![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white)](https://nestjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![CI Pipeline](https://github.com/edcamargo/api.nestjs/actions/workflows/ci.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/ci.yml)
+[![CD - Develop](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-develop.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-develop.yml)
+[![CD - Production](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-main.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-main.yml)
 
 ## 📋 Índice
 
@@ -13,6 +16,7 @@
 - [Tecnologias](#-tecnologias)
 - [Sistema RBAC](#-sistema-rbac)
 - [Observabilidade](#-observabilidade)
+- [Git Flow & CI/CD](#-git-flow--cicd)
 - [Instalação](#-instalação)
 - [Variáveis de Ambiente](#-variáveis-de-ambiente)
 - [Endpoints da API](#-endpoints-da-api)
@@ -29,11 +33,14 @@ API desenvolvida para demonstrar boas práticas de arquitetura de software:
 - ✅ **Autenticação JWT + RBAC completo**
 - ✅ **Sistema RBAC** (Roles, Permissions, Assignments)
 - ✅ **Observabilidade** (OpenTelemetry)
+- ✅ **Git Flow Automatizado** (feature/*, bugfix/*, hotfix/*)
+- ✅ **CI/CD Completo** (GitHub Actions)
+- ✅ **Auto PR Creation** (develop e main)
 - ✅ **Paginação** com metadata
 - ✅ **Soft Delete** com recuperação
 - ✅ **Documentação Swagger**
 - ✅ **Testes Unitários** (83 testes)
-- ✅ **Testes E2E** (87 testes em 6 módulos)
+- ✅ **Testes E2E** (91 testes em 6 módulos)
 
 ## 🏗️ Arquitetura
 
@@ -131,7 +138,143 @@ export class UserService {
 
 **📖 Mais detalhes**: [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)
 
-## �� Instalação
+## 🔄 Git Flow & CI/CD
+
+Este projeto implementa **Git Flow automatizado** com pipelines CI/CD completos.
+
+### 📐 Padrão de Branches
+
+Todas as branches de desenvolvimento devem seguir o padrão:
+
+| Padrão | Uso | Emoji | Exemplo |
+|--------|-----|-------|---------|
+| `feature/*` | Novas funcionalidades | ✨ | `feature/user-authentication` |
+| `bugfix/*` | Correção de bugs | 🐛 | `bugfix/fix-login-error` |
+| `hotfix/*` | Correções urgentes | 🚑 | `hotfix/critical-security-patch` |
+
+> ⚠️ **Importante**: Branches que não seguirem o padrão terão o CI bloqueado automaticamente.
+
+### 🚀 Fluxo Automatizado
+
+```mermaid
+graph TD
+    A[Push em feature/] --> B[CI Pipeline]
+    B --> C{Passou?}
+    C -->|✅ Sim| D[Auto PR → develop]
+    C -->|❌ Não| E[Fix & Push Again]
+    D --> F[Code Review]
+    F --> G[Merge to develop]
+    G --> H[Deploy Staging]
+    H --> I{Staging OK?}
+    I -->|✅ Sim| J[Auto PR → main]
+    I -->|❌ Não| K[Fix & Redeploy]
+    J --> L[Final Review]
+    L --> M[Merge to main]
+    M --> N[🚀 Deploy Production]
+```
+
+### ⚡ Pipeline CI/CD
+
+#### 1️⃣ **CI Pipeline** (Automático em todo push)
+```yaml
+✅ Branch Naming Check   # Valida padrão de nome
+✅ Lint Code             # ESLint (0 warnings)
+✅ Unit Tests            # 83 testes unitários
+✅ E2E Tests             # 91 testes E2E
+✅ Build Application     # TypeScript compilation
+✅ Quality Gate          # Verifica se tudo passou
+```
+
+#### 2️⃣ **Auto PR to Develop** (Após CI passar)
+- 🤖 Cria PR automaticamente
+- 📋 Descrição detalhada com commits
+- 🏷️ Labels automáticas por tipo
+- ✨ Emoji baseado no tipo de branch
+- ✅ Pronto para code review
+
+#### 3️⃣ **CD - Staging** (Após merge em develop)
+```yaml
+✅ Build Application
+✅ Database Migrations
+✅ Deploy to Staging
+```
+
+#### 4️⃣ **Auto PR to Main** (Após deploy staging OK)
+- 🎉 Cria PR de Release automaticamente
+- 📊 Inclui últimos 10 commits
+- 🎯 Versionamento automático (YYYY.MM.DD-build)
+- ⚠️ Requer aprovação para produção
+
+#### 5️⃣ **CD - Production** (Após merge em main)
+```yaml
+✅ Build Application
+✅ Database Migrations
+✅ Deploy to Production
+🎉 Create GitHub Release
+```
+
+### 🎯 Como Contribuir
+
+#### 1. Criar nova branch
+```bash
+# Escolha o tipo adequado
+git checkout -b feature/minha-funcionalidade
+# ou
+git checkout -b bugfix/corrigir-bug
+# ou
+git checkout -b hotfix/correcao-urgente
+```
+
+#### 2. Desenvolver e commitar
+```bash
+# Use Conventional Commits
+git add .
+git commit -m "feat: adiciona autenticação OAuth"
+git push origin feature/minha-funcionalidade
+```
+
+**Padrões de commit:**
+- `feat:` nova funcionalidade
+- `fix:` correção de bug
+- `docs:` documentação
+- `test:` testes
+- `refactor:` refatoração
+- `chore:` manutenção
+
+#### 3. Aguardar automação
+- ⏳ CI roda automaticamente
+- ✅ Se passar: PR criado automaticamente
+- 📧 Você será notificado
+
+#### 4. Code Review
+- 👀 Revise o PR criado
+- 💬 Responda comentários
+- ✅ Aprove quando pronto
+
+#### 5. Merge e Deploy
+- ✨ Merge para `develop` → Deploy staging automático
+- 🚀 Merge para `main` → Deploy produção automático
+
+### 📊 Status dos Workflows
+
+Você pode acompanhar o status dos workflows em:
+- **CI Pipeline**: Valida código e testes
+- **Auto PR to Develop**: Cria PRs automaticamente
+- **Auto PR to Main**: Cria PRs de release
+- **CD - Staging**: Deploy em ambiente de homologação
+- **CD - Production**: Deploy em produção
+
+### 🛡️ Proteções de Branch
+
+- 🔒 **main**: Protegida, requer PR + aprovação
+- 🔒 **develop**: Protegida, requer PR + aprovação  
+- ✅ **feature/\***: Livre para desenvolvimento
+
+### 📚 Documentação Completa
+
+Para mais detalhes sobre o Git Flow, consulte: **[docs/GIT_FLOW.md](docs/GIT_FLOW.md)**
+
+## 🔧 Instalação
 
 ```bash
 # 1. Instalar dependências
@@ -334,6 +477,7 @@ npm run format         # Formatar código
 
 ## 📚 Documentação Adicional
 
+- **[docs/GIT_FLOW.md](docs/GIT_FLOW.md)** - Guia completo de Git Flow e automação
 - **[docs/AUTH_ARCHITECTURE.md](docs/AUTH_ARCHITECTURE.md)** - Arquitetura de autenticação
 - **[docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)** - Guia de observabilidade
 
