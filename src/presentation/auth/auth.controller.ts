@@ -42,12 +42,13 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res?: Response,
   ): Promise<AuthResponseDto> {
+    // Authenticate user first - let exceptions propagate
     const auth = await this.authService.login(loginDto);
 
     // If configured, set cookie with access token to simplify Swagger/dev testing.
     // Controlled by SET_COOKIE_ON_LOGIN env var. To enable Swagger auto-send, set SET_COOKIE_ON_LOGIN=true and COOKIE_HTTPONLY=false
-    try {
-      if (process.env.SET_COOKIE_ON_LOGIN === "true" && res) {
+    if (process.env.SET_COOKIE_ON_LOGIN === "true" && res) {
+      try {
         const authData = auth as {
           accessToken?: string;
           data?: { accessToken?: string };
@@ -65,14 +66,13 @@ export class AuthController {
             maxAge,
           });
         }
+      } catch (e) {
+        // don't fail login if cookie setting fails
+        console.warn(
+          "Failed to set cookie on login:",
+          e instanceof Error ? e.message : e,
+        );
       }
-    } catch (e) {
-      // don't fail login if cookie setting fails
-
-      console.warn(
-        "Failed to set cookie on login:",
-        e instanceof Error ? e.message : e,
-      );
     }
 
     return auth;

@@ -61,7 +61,7 @@ describe("RoleController (unit)", () => {
 
       const result = await controller.findAll();
 
-      expect(result.data).toHaveLength(2);
+      expect(result).toHaveLength(2);
       expect(mockService.findAll).toHaveBeenCalledWith(false);
     });
 
@@ -92,9 +92,9 @@ describe("RoleController (unit)", () => {
 
       const result = await controller.findAll("true");
 
-      expect(result.data).toHaveLength(2);
-      expect(result.data[0]).toHaveProperty("id", "1");
-      expect(result.data[1]).toHaveProperty("id", "2");
+      expect(result).toHaveLength(2);
+      expect(result[0]).toHaveProperty("id", "1");
+      expect(result[1]).toHaveProperty("id", "2");
       expect(mockService.findAll).toHaveBeenCalledWith(true);
     });
   });
@@ -126,7 +126,7 @@ describe("RoleController (unit)", () => {
 
       const result = await controller.findActive();
 
-      expect(result.data).toHaveLength(2);
+      expect(result).toHaveLength(2);
       expect(mockService.findActive).toHaveBeenCalled();
     });
   });
@@ -151,8 +151,8 @@ describe("RoleController (unit)", () => {
 
       const result = await controller.create(dto);
 
-      expect(result.data).toHaveProperty("id", "1");
-      expect(result.data).toHaveProperty("name", dto.name);
+      expect(result).toHaveProperty("id", "1");
+      expect(result).toHaveProperty("name", dto.name);
       expect(mockService.create).toHaveBeenCalledWith(dto);
     });
 
@@ -185,7 +185,7 @@ describe("RoleController (unit)", () => {
 
       const result = await controller.findById("1");
 
-      expect(result.data).toHaveProperty("id");
+      expect(result).toHaveProperty("id");
       expect(mockService.findById).toHaveBeenCalledWith("1");
     });
 
@@ -217,7 +217,7 @@ describe("RoleController (unit)", () => {
 
       const result = await controller.update("1", dto);
 
-      expect(result.data).toHaveProperty("id");
+      expect(result).toHaveProperty("id");
       expect(mockService.update).toHaveBeenCalledWith("1", dto);
     });
 
@@ -307,7 +307,7 @@ describe("RoleController (unit)", () => {
 
       const result = await controller.restore("1");
 
-      expect(result.data).toHaveProperty("id");
+      expect(result).toHaveProperty("id");
       expect(mockService.restore).toHaveBeenCalledWith("1");
     });
 

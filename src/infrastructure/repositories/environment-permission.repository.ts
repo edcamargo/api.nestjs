@@ -100,8 +100,10 @@ export class EnvironmentPermissionRepository
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     delete data.deletedAt;
 
+    // Prisma returns any
     const updated = await this.prisma.environmentPermission.update({
       where: { id },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data,
     });
 

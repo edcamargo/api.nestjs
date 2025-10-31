@@ -40,11 +40,9 @@ export class RoleController {
     type: RoleResponseDto,
   })
   @ApiResponse({ status: 409, description: "Role already exists" })
-  async create(
-    @Body() createRoleDto: CreateRoleDto,
-  ): Promise<{ data: RoleResponseDto }> {
+  async create(@Body() createRoleDto: CreateRoleDto): Promise<RoleResponseDto> {
     const role = await this.roleService.create(createRoleDto);
-    return { data: RoleMapper.toResponse(role) };
+    return RoleMapper.toResponse(role);
   }
 
   @Get()
@@ -58,9 +56,9 @@ export class RoleController {
   })
   async findAll(
     @Query("includeDeleted") includeDeleted?: string,
-  ): Promise<{ data: RoleResponseDto[] }> {
+  ): Promise<RoleResponseDto[]> {
     const roles = await this.roleService.findAll(includeDeleted === "true");
-    return { data: RoleMapper.toResponseArray(roles) };
+    return RoleMapper.toResponseArray(roles);
   }
 
   @Get("active")
@@ -71,9 +69,9 @@ export class RoleController {
     description: "Active roles retrieved successfully",
     type: [RoleResponseDto],
   })
-  async findActive(): Promise<{ data: RoleResponseDto[] }> {
+  async findActive(): Promise<RoleResponseDto[]> {
     const roles = await this.roleService.findActive();
-    return { data: RoleMapper.toResponseArray(roles) };
+    return RoleMapper.toResponseArray(roles);
   }
 
   @Get(":id")
@@ -85,9 +83,9 @@ export class RoleController {
     type: RoleResponseDto,
   })
   @ApiResponse({ status: 404, description: "Role not found" })
-  async findById(@Param("id") id: string): Promise<{ data: RoleResponseDto }> {
+  async findById(@Param("id") id: string): Promise<RoleResponseDto> {
     const role = await this.roleService.findById(id);
-    return { data: RoleMapper.toResponse(role) };
+    return RoleMapper.toResponse(role);
   }
 
   @Put(":id")
@@ -102,9 +100,9 @@ export class RoleController {
   async update(
     @Param("id") id: string,
     @Body() updateRoleDto: UpdateRoleDto,
-  ): Promise<{ data: RoleResponseDto }> {
+  ): Promise<RoleResponseDto> {
     const role = await this.roleService.update(id, updateRoleDto);
-    return { data: RoleMapper.toResponse(role) };
+    return RoleMapper.toResponse(role);
   }
 
   @Delete(":id")
@@ -127,9 +125,9 @@ export class RoleController {
     type: RoleResponseDto,
   })
   @ApiResponse({ status: 404, description: "Role not found" })
-  async restore(@Param("id") id: string): Promise<{ data: RoleResponseDto }> {
+  async restore(@Param("id") id: string): Promise<RoleResponseDto> {
     const role = await this.roleService.restore(id);
-    return { data: RoleMapper.toResponse(role) };
+    return RoleMapper.toResponse(role);
   }
 
   @Delete(":id/hard")

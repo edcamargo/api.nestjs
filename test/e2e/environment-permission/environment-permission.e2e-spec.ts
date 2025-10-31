@@ -89,9 +89,10 @@ describe("EnvironmentPermission (E2E)", () => {
         })
         .expect(400);
 
-      expect(response.body).toHaveProperty("data");
-      expect(response.body.data).toHaveProperty("statusCode", 400);
-      expect(response.body.data).toHaveProperty("error");
+      expect(response.body).toHaveProperty("data", null);
+      expect(response.body).toHaveProperty("error");
+      expect(response.body.error).toHaveProperty("statusCode", 400);
+      expect(response.body.error).toHaveProperty("message");
     });
   });
 

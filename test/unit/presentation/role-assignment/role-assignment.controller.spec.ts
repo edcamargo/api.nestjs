@@ -66,7 +66,7 @@ describe("RoleAssignmentController (unit)", () => {
 
       const result = await controller.findAll();
 
-      expect(result.data).toHaveLength(2);
+      expect(result).toHaveLength(2);
       expect(mockService.findAll).toHaveBeenCalledWith(false);
     });
 
@@ -97,7 +97,7 @@ describe("RoleAssignmentController (unit)", () => {
 
       const result = await controller.findAll("true");
 
-      expect(result.data).toHaveLength(2);
+      expect(result).toHaveLength(2);
       expect(mockService.findAll).toHaveBeenCalledWith(true);
     });
   });
@@ -130,7 +130,7 @@ describe("RoleAssignmentController (unit)", () => {
 
       const result = await controller.findByUserId(userId);
 
-      expect(result.data).toHaveLength(2);
+      expect(result).toHaveLength(2);
       expect(mockService.findByUserId).toHaveBeenCalledWith(userId);
     });
   });
@@ -154,7 +154,7 @@ describe("RoleAssignmentController (unit)", () => {
 
       const result = await controller.findActiveByUserId(userId);
 
-      expect(result.data).toHaveLength(1);
+      expect(result).toHaveLength(1);
       expect(mockService.findActiveByUserId).toHaveBeenCalledWith(userId);
     });
 
@@ -165,7 +165,7 @@ describe("RoleAssignmentController (unit)", () => {
 
       const result = await controller.findActiveByUserId(userId);
 
-      expect(result.data).toHaveLength(0);
+      expect(result).toHaveLength(0);
       expect(mockService.findActiveByUserId).toHaveBeenCalledWith(userId);
     });
   });
@@ -187,7 +187,7 @@ describe("RoleAssignmentController (unit)", () => {
 
       const result = await controller.findById(assignmentId);
 
-      expect(result.data.id).toBe(assignmentId);
+      expect(result.id).toBe(assignmentId);
       expect(mockService.findById).toHaveBeenCalledWith(assignmentId);
     });
 
@@ -227,7 +227,7 @@ describe("RoleAssignmentController (unit)", () => {
 
       const result = await controller.create(dto);
 
-      expect(result.data).toMatchObject({
+      expect(result).toMatchObject({
         id: "1",
         userId: dto.userId,
       });
@@ -276,7 +276,7 @@ describe("RoleAssignmentController (unit)", () => {
 
       const result = await controller.update(assignmentId, dto);
 
-      expect(result.data.id).toBe(assignmentId);
+      expect(result.id).toBe(assignmentId);
       expect(mockService.update).toHaveBeenCalledWith(assignmentId, dto);
     });
 
@@ -351,7 +351,7 @@ describe("RoleAssignmentController (unit)", () => {
 
       const result = await controller.restore(assignmentId);
 
-      expect(result.data.id).toBe(assignmentId);
+      expect(result.id).toBe(assignmentId);
       expect(mockService.restore).toHaveBeenCalledWith(assignmentId);
     });
 
