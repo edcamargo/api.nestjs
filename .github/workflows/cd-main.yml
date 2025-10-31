@@ -2,18 +2,11 @@ name: CD - Production
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]  # Deploy apenas quando PR de develop→main for aprovado e mergeado
 
 jobs:
   deploy-production:
     name: Deploy to Production
-
-on:
-  push:
-    branches: [main]  # Deploy apenas quando PR de develop→main for aprovado e mergeado
-
-env:
     runs-on: ubuntu-latest
     environment:
       name: production
