@@ -1,7 +1,7 @@
 import { Controller, Get, Req } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { Public } from "../../infrastructure/auth/public.decorator";
-import { Request } from "express";
+import type { Request } from "express";
 
 @ApiTags("Debug")
 @Controller("debug")
@@ -10,10 +10,13 @@ export class DebugController {
   @Public()
   @ApiOperation({ summary: "Show request headers" })
   getHeaders(@Req() req: Request) {
+    const cookies = req.cookies;
+    const rawHeaders = req.rawHeaders;
+
     return {
       headers: req.headers,
-      cookies: (req as any).cookies as Record<string, string> | undefined,
-      rawHeaders: req.rawHeaders,
+      cookies,
+      rawHeaders,
     };
   }
 

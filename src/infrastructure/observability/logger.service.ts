@@ -59,7 +59,7 @@ export class LoggerService implements ILogger {
         body: message,
         attributes: {
           context: context || "Application",
-          ...(metadata || {}),
+          ...metadata,
         },
         timestamp: Date.now(),
       });

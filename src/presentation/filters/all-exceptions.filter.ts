@@ -31,13 +31,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
         exceptionResponse !== null
       ) {
         const respObj = exceptionResponse as Record<string, unknown>;
+        const msgValue = respObj.message || respObj.error;
         message =
-          (respObj.message as string) || (respObj.error as string) || message;
+          (typeof msgValue === "string" ? msgValue : undefined) || message;
       }
     } else if (exception instanceof Error) {
       message = exception.message || "An unexpected error occurred";
-      const errorCode = (exception as any).code as string | undefined;
-      if (errorCode === "ECONNREFUSED") {
+      const errorWithCode = exception as Error & { code?: string };
+      if (errorWithCode.code === "ECONNREFUSED") {
         status = HttpStatus.SERVICE_UNAVAILABLE;
         message = "Service temporarily unavailable";
       }
@@ -62,6 +63,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // Standard error response with data wrapper
+    let details: unknown = undefined;
+    if (exception instanceof HttpException) {
+      const resp = exception.getResponse();
+      if (typeof resp === "object" && resp !== null) {
+        details = (resp as Record<string, unknown>).details;
+      }
+    }
+
     response.status(status).json({
       data: null,
       error: {
@@ -69,11 +78,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message,
         timestamp: new Date().toISOString(),
         path: request.url,
-        details:
-          exception instanceof HttpException &&
-          typeof exception.getResponse() === "object"
-            ? (exception.getResponse() as Record<string, unknown>).details
-            : undefined,
+        details,
       },
     });
   }

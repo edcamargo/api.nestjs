@@ -9,13 +9,15 @@ import { map } from "rxjs/operators";
 import { Request } from "express";
 
 @Injectable()
-export class ResponseInterceptor<T> implements NestInterceptor<T, { data: T }> {
+export class ResponseInterceptor<T>
+  implements NestInterceptor<T, { data: T } | T>
+{
   intercept(
     context: ExecutionContext,
-    next: CallHandler,
+    next: CallHandler<T>,
   ): Observable<{ data: T } | T> {
     const request = context.switchToHttp().getRequest<Request>();
-    const path: string = request.url;
+    const path = request.url;
 
     // Skip transformation for /auth and /health endpoints
     if (path.startsWith("/auth") || path.startsWith("/health")) {

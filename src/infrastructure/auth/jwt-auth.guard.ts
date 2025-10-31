@@ -39,17 +39,23 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
 
       // Read from authorization header or x-access-token header
       const authHeader = headers.authorization || headers["x-access-token"];
-      const header = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+      const headerToken: string | undefined = Array.isArray(authHeader)
+        ? authHeader[0]
+        : authHeader;
 
       // Also support tokens via query params or cookies
       const q = req.query as Record<string, string | string[] | undefined>;
-      const qToken = q.authorization || q.access_token || q.token;
+      const qAuthToken = q.authorization || q.access_token || q.token;
+      const qToken: string | undefined = Array.isArray(qAuthToken)
+        ? qAuthToken[0]
+        : qAuthToken;
+
       const cookies = req.cookies;
-      const cToken =
+      const cToken: string | undefined =
         cookies?.authToken || cookies?.token || cookies?.access_token;
 
       // Prefer header, otherwise query, otherwise cookie
-      const rawToken = header || qToken || cToken;
+      const rawToken: string | undefined = headerToken || qToken || cToken;
 
       if (rawToken && typeof rawToken === "string") {
         const trimmed = rawToken.trim().replace(/^Bearer\s+/i, "");
@@ -62,7 +68,7 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
     return super.canActivate(context);
   }
 
-  handleRequest<TUser = any>(
+  handleRequest<TUser = unknown>(
     err: Error | null,
     user: TUser | false,
     info?: { message?: string },
@@ -75,6 +81,6 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
       throw new UnauthorizedException(info?.message || "Unauthorized");
     }
 
-    return user as TUser;
+    return user;
   }
 }
