@@ -1,7 +1,10 @@
 name: Auto PR to Develop
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
     branches-ignore:
       - develop
       - main
@@ -10,13 +13,14 @@ jobs:
   create-pr:
     name: Create PR to Develop
     runs-on: ubuntu-latest
-    # Only run if CI checks passed
-    if: success()
+    # Only run if CI workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
       - name: Check if PR already exists
@@ -24,7 +28,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_EXISTS=$(gh pr list --base develop --head ${{ github.ref_name }} --json number --jq length)
+          PR_EXISTS=$(gh pr list --base develop --head ${{ github.event.workflow_run.head_branch }} --json number --jq length)
           echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
@@ -33,7 +37,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get branch name
-          BRANCH_NAME="${{ github.ref_name }}"
+          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
           
           # Create PR title from branch name
           PR_TITLE=$(echo "$BRANCH_NAME" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
@@ -41,12 +45,12 @@ jobs:
           # Create PR body
           PR_BODY="## 🤖 Automated Pull Request
 
-          This PR was automatically created by GitHub Actions.
+          This PR was automatically created after CI checks passed.
 
           ### Changes
           - Branch: \`$BRANCH_NAME\`
-          - Latest commit: ${{ github.sha }}
-          - Author: @${{ github.actor }}
+          - Latest commit: ${{ github.event.workflow_run.head_sha }}
+          - Author: @${{ github.event.workflow_run.actor.login }}
 
           ### CI Status
           ✅ All checks passed successfully
@@ -73,5 +77,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           sleep 2
-          PR_NUMBER=$(gh pr list --base develop --head ${{ github.ref_name }} --json number --jq '.[0].number')
-          gh pr comment $PR_NUMBER --body "✅ CI checks passed! This PR is ready for review."
+          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+          PR_NUMBER=$(gh pr list --base develop --head "$BRANCH_NAME" --json number --jq '.[0].number')
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr comment $PR_NUMBER --body "✅ CI checks passed! This PR is ready for review."
+          fi
