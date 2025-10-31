@@ -2,6 +2,7 @@ import { Injectable, ExecutionContext, UnauthorizedException } from "@nestjs/com
 import { AuthGuard } from "@nestjs/passport";
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
+import { Request } from "express";
 
 /**
  * JWT Authentication Guard
@@ -29,43 +30,42 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
 
     // Support token from header, query params, or cookies
     try {
-      const req = context.switchToHttp().getRequest();
-      const headers = req.headers || {};
+      const req = context.switchToHttp().getRequest<Request>();
+      const headers = req.headers;
 
       // Read from authorization header or x-access-token header
       let header = headers.authorization || headers['x-access-token'];
       if (Array.isArray(header)) header = header[0];
 
       // Also support tokens via query params or cookies
-      const q = req.query || {};
+      const q = req.query as Record<string, string | string[] | undefined>;
       const qToken = q.authorization || q.access_token || q.token;
-      const c = req.cookies || {};
-      const cToken = c.authToken || c.token || c.access_token;
+      const c = (req as any).cookies as Record<string, string> | undefined;
+      const cToken = c?.authToken || c?.token || c?.access_token;
 
       // Prefer header, otherwise query, otherwise cookie
       const rawToken = header || qToken || cToken;
 
       if (rawToken && typeof rawToken === 'string') {
         const trimmed = rawToken.trim().replace(/^Bearer\s+/i, '');
-        req.headers = req.headers || {};
-        req.headers.authorization = `Bearer ${trimmed}`;
+        (req.headers as any).authorization = `Bearer ${trimmed}`;
       }
-    } catch (e) {
+    } catch {
       // Ignore extraction errors and let passport handle missing token
     }
 
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, info: any) {
+  handleRequest<TUser = any>(err: Error | null, user: TUser | false, info?: any): TUser {
     if (err) {
       throw err;
     }
 
     if (!user) {
-      throw new UnauthorizedException(info?.message || "Unauthorized");
+      throw new UnauthorizedException((info as any)?.message || "Unauthorized");
     }
 
-    return user;
+    return user as TUser;
   }
 }

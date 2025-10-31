@@ -8,6 +8,7 @@ import {
 import { Reflector } from "@nestjs/core";
 import { UserRole } from "../../domain/user/user.entity";
 import type { IAuthenticatedUser } from "../../domain/auth";
+import { Request } from "express";
 
 /**
  * Roles Guard
@@ -40,8 +41,8 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const user: IAuthenticatedUser = request.user;
+    const request = context.switchToHttp().getRequest<Request & { user?: IAuthenticatedUser }>();
+    const user = request.user;
 
     // If user is not set, authentication is required
     if (!user) {

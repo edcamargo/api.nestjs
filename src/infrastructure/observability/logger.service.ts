@@ -22,7 +22,7 @@ export class LoggerService implements ILogger {
     level: 'log' | 'error' | 'warn' | 'debug' | 'verbose',
     message: string,
     context?: string,
-    metadata?: any,
+    metadata?: Record<string, unknown>,
   ) {
     const timestamp = new Date().toISOString();
     const contextStr = context ? `[${context}]` : '';
@@ -55,7 +55,7 @@ export class LoggerService implements ILogger {
         body: message,
         attributes: {
           context: context || 'Application',
-          ...metadata,
+          ...(metadata || {}),
         },
         timestamp: Date.now(),
       });
@@ -84,7 +84,7 @@ export class LoggerService implements ILogger {
   }
 
   // Métodos customizados com tipagem forte
-  info(message: string, context?: string, meta?: object) {
+  info(message: string, context?: string, meta?: Record<string, unknown>) {
     this.emit('log', message, context, meta);
   }
 

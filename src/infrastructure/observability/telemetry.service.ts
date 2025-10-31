@@ -6,11 +6,9 @@ import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
-import {
-  SEMRESATTRS_SERVICE_NAME,
-  SEMRESATTRS_SERVICE_VERSION,
-} from '@opentelemetry/semantic-conventions';
 import { ITelemetry } from '../../application/observability';
+import { Request } from 'express';
+import type { IAuthenticatedUser } from '../../domain/auth';
 
 @Injectable()
 export class TelemetryService implements OnModuleInit, ITelemetry {
@@ -49,7 +47,7 @@ export class TelemetryService implements OnModuleInit, ITelemetry {
         getNodeAutoInstrumentations({
           '@opentelemetry/instrumentation-fs': { enabled: false },
           '@opentelemetry/instrumentation-http': {
-            ignoreIncomingRequestHook: (request) => {
+            ignoreIncomingRequestHook: (request: Request & { user?: IAuthenticatedUser }) => {
               // Ignorar health checks dos traces
               const url = request.url || '';
               return url.includes('/health');
