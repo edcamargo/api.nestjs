@@ -86,7 +86,10 @@ jobs:
           
           # Build PR body
           PR_TITLE="🎉 Release v${{ steps.version.outputs.version }}"
-          PR_BODY="## 🚀 Production Release - v${{ steps.version.outputs.version }}
+          
+          # Use cat to create multi-line body (safer than quotes)
+          read -r -d '' PR_BODY <<'PRBODY' || true
+## 🚀 Production Release - v${{ steps.version.outputs.version }}
 
 This PR was automatically created after successful staging deployment.
 
@@ -99,9 +102,7 @@ This PR was automatically created after successful staging deployment.
 
 ### 📋 Changes
 
-\`\`\`
-${COMMITS}
-\`\`\`
+CHANGESGOHERE
 
 ### 🎯 Deployment
 - **Environment**: Production
@@ -115,7 +116,11 @@ ${COMMITS}
 - Ensure all staging tests have passed
 
 ---
-*This PR was automatically generated after successful develop deployment.*"
+*This PR was automatically generated after successful develop deployment.*
+PRBODY
+
+          # Replace placeholder with commits
+          PR_BODY="${PR_BODY//CHANGESGOHERE/$COMMITS}"
           
           # Create PR using GitHub API
           echo "🚀 Creating PR..."
