@@ -352,3 +352,4 @@ Este projeto está sob a licença especificada no arquivo LICENSE.
 **Eduardo Camargo**
 - GitHub: [@edcamargo](https://github.com/edcamargo)
 - Repository: [api.nestjs](https://github.com/edcamargo/api.nestjs)
+
