@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - '**'
-    branches-ignore:
-      - develop
-      - main
   pull_request:
     branches:
       - develop
