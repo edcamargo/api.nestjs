@@ -17,20 +17,27 @@ jobs:
     steps:
       - name: Check branch naming convention
         run: |
-          echo "Checking branch name: ${{ github.ref_name }}"
+          # For PRs, use head ref; for pushes, use ref name
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BRANCH_NAME="${{ github.head_ref }}"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
           
-          # Allow develop and main
-          if [[ "${{ github.ref_name }}" == "develop" ]] || [[ "${{ github.ref_name }}" == "main" ]]; then
+          echo "Checking branch name: $BRANCH_NAME"
+          
+          # Allow develop and main (fallback)
+          if [[ "$BRANCH_NAME" == "develop" ]] || [[ "$BRANCH_NAME" == "main" ]]; then
             echo "✅ Main branch detected"
             exit 0
           fi
           
           # Check if branch follows naming convention
-          if [[ "${{ github.ref_name }}" =~ ^(feature|bugfix|hotfix)/.+ ]]; then
-            echo "✅ Branch name '${{ github.ref_name }}' follows the naming convention"
+          if [[ "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix)/.+ ]]; then
+            echo "✅ Branch name '$BRANCH_NAME' follows the naming convention"
             exit 0
           else
-            echo "❌ Branch name '${{ github.ref_name }}' does not follow the naming convention!"
+            echo "❌ Branch name '$BRANCH_NAME' does not follow the naming convention!"
             echo ""
             echo "📋 Required patterns:"
             echo "  - feature/<description>  (for new features)"
@@ -49,5 +56,10 @@ jobs:
       - name: Success message
         if: success()
         run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BRANCH_NAME="${{ github.head_ref }}"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
           echo "🎉 Branch naming convention check passed!"
-          echo "Branch: ${{ github.ref_name }}"
+          echo "Branch: $BRANCH_NAME"
