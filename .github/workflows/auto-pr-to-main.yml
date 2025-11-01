@@ -36,6 +36,12 @@ jobs:
         with:
           ref: develop
           fetch-depth: 0
+          
+      - name: Install jq for JSON processing
+        run: |
+          echo "📦 Installing jq..."
+          sudo apt-get update -qq
+          sudo apt-get install -y jq
 
       - name: Debug workflow info
         run: |
@@ -71,6 +77,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
+        id: create_pr
         if: steps.check_pr.outputs.pr_exists == '0'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,73 +86,130 @@ jobs:
           
           # Get latest commits from develop
           echo "📋 Getting commit history..."
-          COMMITS=$(git log origin/main..origin/develop --pretty=format:"- %s (%h)" --no-merges | head -10)
+          COMMITS=$(git log origin/main..origin/develop --pretty=format:"- %s (%h)" --no-merges | head -10 || echo "No commits found")
           
           echo "Commits to include:"
           echo "$COMMITS"
           
           # Create PR body using echo (more reliable)
-          {
-            echo "## 🚀 Production Release - v${{ steps.version.outputs.version }}"
-            echo ""
-            echo "This PR was automatically created after successful staging deployment."
-            echo ""
-            echo "### ✅ All Checks Passed"
-            echo "- ✅ Lint"
-            echo "- ✅ Unit Tests"
-            echo "- ✅ E2E Tests"
-            echo "- ✅ Build"
-            echo "- ✅ Staging Deployment"
-            echo ""
-            echo "### 📋 Changes"
-            echo ""
-            echo "\`\`\`"
-            echo "$COMMITS"
-            echo "\`\`\`"
-            echo ""
-            echo "### 🎯 Deployment"
-            echo "- **Environment**: Production"
-            echo "- **Version**: v${{ steps.version.outputs.version }}"
-            echo "- **Latest commit**: ${{ github.sha }}"
-            echo "- **Author**: @${{ github.actor }}"
-            echo ""
-            echo "### ⚠️ Important"
-            echo "- This will trigger a production deployment"
-            echo "- Review changes carefully before merging"
-            echo "- Ensure all staging tests have passed"
-            echo ""
-            echo "---"
-            echo "*This PR was automatically generated after successful develop deployment.*"
-          } > pr_body.md
+          cat > pr_body.md << 'EOFMARKER'
+## 🚀 Production Release - vVERSION_PLACEHOLDER
 
-          echo "📄 PR body created, content:"
-          cat pr_body.md
+This PR was automatically created after successful staging deployment.
 
-          # Create the PR
-          echo "🚀 Creating PR..."
-          gh pr create \
-            --base main \
-            --head develop \
-            --title "🎉 Release v${{ steps.version.outputs.version }}" \
-            --body-file pr_body.md \
-            --label "automated-pr,release,production" || {
-              echo "❌ Failed to create PR"
-              echo "Debug info:"
-              gh auth status
-              exit 1
-            }
+### ✅ All Checks Passed
+- ✅ Lint
+- ✅ Unit Tests
+- ✅ E2E Tests
+- ✅ Build
+- ✅ Staging Deployment
+
+### 📋 Changes
+
+```
+COMMITS_PLACEHOLDER
+```
+
+### 🎯 Deployment
+- **Environment**: Production
+- **Version**: vVERSION_PLACEHOLDER
+- **Latest commit**: SHA_PLACEHOLDER
+- **Author**: @AUTHOR_PLACEHOLDER
+
+### ⚠️ Important
+- This will trigger a production deployment
+- Review changes carefully before merging
+- Ensure all staging tests have passed
+
+---
+*This PR was automatically generated after successful develop deployment.*
+EOFMARKER
+
+          # Replace placeholders with actual values
+          sed -i.bak "s/VERSION_PLACEHOLDER/${{ steps.version.outputs.version }}/g" pr_body.md
+          sed -i.bak "s/SHA_PLACEHOLDER/${{ github.sha }}/g" pr_body.md
+          sed -i.bak "s/AUTHOR_PLACEHOLDER/${{ github.actor }}/g" pr_body.md
           
-          echo "✅ PR created successfully!"
+          # Replace commits (escape special chars)
+          COMMITS_ESCAPED=$(echo "$COMMITS" | sed 's/[\/&]/\\&/g')
+          echo "$COMMITS_ESCAPED" > commits.tmp
+          sed -i.bak "/COMMITS_PLACEHOLDER/r commits.tmp" pr_body.md
+          sed -i.bak "/COMMITS_PLACEHOLDER/d" pr_body.md
+          
+          echo "� PR body created"
+
+          # Use GitHub API directly instead of gh CLI
+          RESPONSE=$(curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/pulls \
+            -d @- << EOF
+{
+  "title": "🎉 Release v${{ steps.version.outputs.version }}",
+  "body": $(cat pr_body.md | jq -Rs .),
+  "head": "develop",
+  "base": "main"
+}
+EOF
+)
+          
+          echo "API Response:"
+          echo "$RESPONSE"
+          
+          # Check if PR was created successfully
+          if echo "$RESPONSE" | jq -e '.number' > /dev/null 2>&1; then
+            PR_NUMBER=$(echo "$RESPONSE" | jq -r '.number')
+            echo "✅ PR #$PR_NUMBER created successfully!"
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          else
+            ERROR_MSG=$(echo "$RESPONSE" | jq -r '.message // "Unknown error"')
+            echo "❌ Failed to create PR: $ERROR_MSG"
+            echo "Full response: $RESPONSE"
+            exit 1
+          fi
+
+      - name: Add labels to PR
+        if: steps.check_pr.outputs.pr_exists == '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get PR number from previous step or find it
+          if [ -z "${{ steps.create_pr.outputs.pr_number }}" ]; then
+            PR_NUMBER=$(gh pr list --base main --head develop --json number --jq '.[0].number')
+          else
+            PR_NUMBER="${{ steps.create_pr.outputs.pr_number }}"
+          fi
+          
+          if [ -n "$PR_NUMBER" ]; then
+            echo "Adding labels to PR #$PR_NUMBER..."
+            curl -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/labels \
+              -d '{"labels":["automated-pr","release","production"]}'
+            echo "✅ Labels added"
+          fi
 
       - name: Comment on PR
         if: steps.check_pr.outputs.pr_exists == '0'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sleep 2
-          PR_NUMBER=$(gh pr list --base main --head develop --json number --jq '.[0].number')
-          if [ -n "$PR_NUMBER" ]; then
-            gh pr comment $PR_NUMBER --body "✅ All staging checks passed! Ready for production deployment. 
+          if [ -z "${{ steps.create_pr.outputs.pr_number }}" ]; then
+            PR_NUMBER=$(gh pr list --base main --head develop --json number --jq '.[0].number')
+          else
+            PR_NUMBER="${{ steps.create_pr.outputs.pr_number }}"
+          fi
           
-          **Please review carefully before merging to production.**"
+          if [ -n "$PR_NUMBER" ]; then
+            echo "Adding comment to PR #$PR_NUMBER..."
+            curl -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/comments \
+              -d '{"body":"✅ All staging checks passed! Ready for production deployment.\n\n**Please review carefully before merging to production.**"}'
+            echo "✅ Comment added"
           fi
