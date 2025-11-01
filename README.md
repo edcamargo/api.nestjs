@@ -318,6 +318,31 @@ Todos os workflows estão configurados e funcionando:
 
 **Visualizar todos os workflows**: [Actions](https://github.com/edcamargo/api.nestjs/actions)
 
+### ⚠️ Importante: Primeiro Setup
+
+**Para novos repositórios ou primeira configuração:**
+
+Devido a uma limitação do GitHub Actions, os **primeiros 2 PRs precisam ser criados manualmente**:
+
+1. **Primeiro PR** (`feature/ci-cd-implementation` → `develop`):
+   - Os workflows ainda não existem no branch `develop`
+   - GitHub Actions só executa workflows que existem no branch padrão
+   - **Solução**: Criar PR manualmente via interface do GitHub
+   
+2. **Segundo PR** (`develop` → `main`):
+   - Os workflows existem em `develop` mas não em `main`
+   - Mesma limitação se aplica
+   - **Solução**: Criar PR manualmente via interface do GitHub
+
+3. **Terceiro PR em diante** 🎉:
+   - ✅ Workflows existem em AMBOS os branches
+   - ✅ Auto PR funciona perfeitamente!
+   - ✅ **100% Automático!**
+
+**Isso é necessário apenas UMA VEZ durante o setup inicial do projeto!**
+
+Depois que os workflows estiverem em `develop` e `main`, toda a automação funcionará perfeitamente para todos os futuros PRs.
+
 ### 🛡️ Proteções de Branch
 
 - 🔒 **main**: Protegida, requer PR + aprovação
@@ -558,4 +583,3 @@ Projeto educacional - UNLICENSED
 ---
 
 **⭐ Se este projeto foi útil, considere dar uma estrela!**
-
