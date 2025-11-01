@@ -5,6 +5,9 @@
 [![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white)](https://nestjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![CI Pipeline](https://github.com/edcamargo/api.nestjs/actions/workflows/ci.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/ci.yml)
+[![CD - Develop](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-develop.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-develop.yml)
+[![CD - Production](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-main.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-main.yml)
 
 ## 📋 Índice
 
@@ -13,6 +16,7 @@
 - [Tecnologias](#-tecnologias)
 - [Sistema RBAC](#-sistema-rbac)
 - [Observabilidade](#-observabilidade)
+- [Git Flow & CI/CD](#-git-flow--cicd)
 - [Instalação](#-instalação)
 - [Variáveis de Ambiente](#-variáveis-de-ambiente)
 - [Endpoints da API](#-endpoints-da-api)
@@ -29,11 +33,14 @@ API desenvolvida para demonstrar boas práticas de arquitetura de software:
 - ✅ **Autenticação JWT + RBAC completo**
 - ✅ **Sistema RBAC** (Roles, Permissions, Assignments)
 - ✅ **Observabilidade** (OpenTelemetry)
+- ✅ **Git Flow Automatizado** (feature/*, bugfix/*, hotfix/*)
+- ✅ **CI/CD Completo** (GitHub Actions)
+- ✅ **Auto PR Creation** (develop e main)
 - ✅ **Paginação** com metadata
 - ✅ **Soft Delete** com recuperação
 - ✅ **Documentação Swagger**
 - ✅ **Testes Unitários** (83 testes)
-- ✅ **Testes E2E** (87 testes em 6 módulos)
+- ✅ **Testes E2E** (91 testes em 6 módulos)
 
 ## 🏗️ Arquitetura
 
@@ -63,9 +70,11 @@ API desenvolvida para demonstrar boas práticas de arquitetura de software:
 
 - **[NestJS](https://nestjs.com/)** - Framework Node.js
 - **[Prisma](https://www.prisma.io/)** - ORM TypeScript
+- **[SQLite](https://www.sqlite.org/)** - Banco de dados (desenvolvimento e testes)
 - **[Passport JWT](https://www.passportjs.org/)** - Autenticação
 - **[OpenTelemetry](https://opentelemetry.io/)** - Observabilidade
 - **[Swagger](https://swagger.io/)** - Documentação API
+- **[GitHub Actions](https://github.com/features/actions)** - CI/CD automatizado
 
 ## 🎭 Sistema RBAC
 
@@ -131,7 +140,195 @@ export class UserService {
 
 **📖 Mais detalhes**: [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)
 
-## �� Instalação
+## 🔄 Git Flow & CI/CD
+
+Este projeto implementa **Git Flow automatizado** com pipelines CI/CD completos.
+
+### 📐 Padrão de Branches
+
+Todas as branches de desenvolvimento devem seguir o padrão:
+
+| Padrão | Uso | Emoji | Exemplo |
+|--------|-----|-------|---------|
+| `feature/*` | Novas funcionalidades | ✨ | `feature/user-authentication` |
+| `bugfix/*` | Correção de bugs | 🐛 | `bugfix/fix-login-error` |
+| `hotfix/*` | Correções urgentes | 🚑 | `hotfix/critical-security-patch` |
+
+> ⚠️ **Importante**: Branches que não seguirem o padrão terão o CI bloqueado automaticamente.
+
+### 🚀 Fluxo Automatizado
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1️⃣ DESENVOLVIMENTO                                         │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ git checkout -b feature/nova-funcionalidade           │  │
+│  │ git commit -m "feat: adiciona funcionalidade"         │  │
+│  │ git push origin feature/nova-funcionalidade           │  │
+│  └───────────────────────────────────────────────────────┘  │
+└────────────────────┬────────────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│  2️⃣ CI PIPELINE (Automático)                                │
+│  ✅ Branch Naming Check → Valida padrão feature/*          │
+│  ✅ Lint Code → ESLint sem warnings                        │
+│  ✅ Unit Tests → 83 testes                                 │
+│  ✅ E2E Tests → 91 testes em 6 módulos                     │
+│  ✅ Build → Compilação TypeScript                          │
+│  ✅ Quality Gate → Verifica se tudo passou                 │
+└────────────────────┬────────────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│  3️⃣ AUTO PR (Se CI passou)                                  │
+│  🤖 Cria Pull Request automaticamente                       │
+│  📋 Título: "✨ Nova funcionalidade"                        │
+│  🏷️ Labels: feature, ready-for-review                      │
+│  ✅ Pronto para code review                                 │
+└────────────────────┬────────────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│  4️⃣ CODE REVIEW & MERGE                                     │
+│  👀 Revisar código                                          │
+│  💬 Discutir mudanças                                       │
+│  ✅ Aprovar e fazer merge → develop                         │
+└────────────────────┬────────────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│  5️⃣ CD STAGING (Após merge em develop)                      │
+│  📦 Build da aplicação                                      │
+│  🗄️ Database migrations (SQLite)                            │
+│  🚀 Deploy para ambiente de staging                         │
+└────────────────────┬────────────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│  6️⃣ AUTO PR TO MAIN (Após staging OK)                       │
+│  🎉 Cria PR de Release automaticamente                      │
+│  📊 Versão: YYYY.MM.DD-build_number                         │
+│  ⚠️ Requer aprovação final                                  │
+└────────────────────┬────────────────────────────────────────┘
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│  7️⃣ CD PRODUCTION (Após merge em main)                      │
+│  📦 Build final                                             │
+│  🗄️ Database migrations (SQLite)                            │
+│  🎯 Create GitHub Release                                   │
+│  🚀 Deploy para PRODUÇÃO                                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### ⚡ Pipeline CI/CD
+
+#### 1️⃣ **CI Pipeline** (Automático em todo push)
+```yaml
+✅ Branch Naming Check   # Valida padrão de nome
+✅ Lint Code             # ESLint (0 warnings)
+✅ Unit Tests            # 83 testes unitários
+✅ E2E Tests             # 91 testes E2E
+✅ Build Application     # TypeScript compilation
+✅ Quality Gate          # Verifica se tudo passou
+```
+
+#### 2️⃣ **Auto PR to Develop** (Após CI passar)
+- 🤖 Cria PR automaticamente
+- 📋 Descrição detalhada com commits
+- 🏷️ Labels automáticas por tipo
+- ✨ Emoji baseado no tipo de branch
+- ✅ Pronto para code review
+
+#### 3️⃣ **CD - Staging** (Após merge em develop)
+```yaml
+✅ Build Application
+✅ Database Migrations (SQLite)
+✅ Deploy to Staging Environment
+📊 Environment: Staging (develop branch)
+```
+
+#### 4️⃣ **Auto PR to Main** (Após deploy staging OK)
+- 🎉 Cria PR de Release automaticamente
+- 📊 Inclui últimos 10 commits do develop
+- 🎯 Versionamento automático (YYYY.MM.DD-build)
+- ⚠️ Requer aprovação para produção
+- 🏷️ Label: release
+
+#### 5️⃣ **CD - Production** (Após merge em main)
+```yaml
+✅ Build Application
+✅ Database Migrations (SQLite)
+✅ Create GitHub Release (tag versioned)
+✅ Deploy to Production Environment
+🎉 Production is live!
+```
+
+> **💡 Nota sobre SQLite**: O projeto usa SQLite em todos os ambientes por simplicidade. Para produção real, considere migrar para PostgreSQL ou MySQL editando o `schema.prisma` e as variáveis de ambiente nos workflows.
+
+### 🎯 Como Contribuir
+
+#### 1. Criar nova branch
+```bash
+# Escolha o tipo adequado
+git checkout -b feature/minha-funcionalidade
+# ou
+git checkout -b bugfix/corrigir-bug
+# ou
+git checkout -b hotfix/correcao-urgente
+```
+
+#### 2. Desenvolver e commitar
+```bash
+# Use Conventional Commits
+git add .
+git commit -m "feat: adiciona autenticação OAuth"
+git push origin feature/minha-funcionalidade
+```
+
+**Padrões de commit:**
+- `feat:` nova funcionalidade
+- `fix:` correção de bug
+- `docs:` documentação
+- `test:` testes
+- `refactor:` refatoração
+- `chore:` manutenção
+
+#### 3. Aguardar automação
+- ⏳ CI roda automaticamente
+- ✅ Se passar: PR criado automaticamente
+- 📧 Você será notificado
+
+#### 4. Code Review
+- 👀 Revise o PR criado
+- 💬 Responda comentários
+- ✅ Aprove quando pronto
+
+#### 5. Merge e Deploy
+- ✨ Merge para `develop` → Deploy staging automático
+- 🚀 Merge para `main` → Deploy produção automático
+
+### 📊 Status dos Workflows
+
+Todos os workflows estão configurados e funcionando:
+
+| Workflow | Trigger | Descrição | Status |
+|----------|---------|-----------|--------|
+| **Branch Naming Check** | Push em qualquer branch | Valida padrão feature/\*, bugfix/\*, hotfix/\* | [![Branch Check](https://github.com/edcamargo/api.nestjs/actions/workflows/branch-naming-check.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/branch-naming-check.yml) |
+| **CI Pipeline** | Push/PR em feature/\*, develop, main | Lint + Unit + E2E + Build | [![CI](https://github.com/edcamargo/api.nestjs/actions/workflows/ci.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/ci.yml) |
+| **Auto PR to Develop** | CI passa em feature/\*, bugfix/\*, hotfix/\* | Cria PR automaticamente | ⚡ Automático |
+| **CD - Staging** | Merge em develop | Deploy para staging | [![CD Staging](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-develop.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-develop.yml) |
+| **Auto PR to Main** | Deploy staging concluído | Cria PR de release | ⚡ Automático |
+| **CD - Production** | Merge em main | Deploy para produção | [![CD Production](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-main.yml/badge.svg)](https://github.com/edcamargo/api.nestjs/actions/workflows/cd-main.yml) |
+
+**Visualizar todos os workflows**: [Actions](https://github.com/edcamargo/api.nestjs/actions)
+
+### 🛡️ Proteções de Branch
+
+- 🔒 **main**: Protegida, requer PR + aprovação
+- 🔒 **develop**: Protegida, requer PR + aprovação  
+- ✅ **feature/\***: Livre para desenvolvimento
+
+### 📚 Documentação Completa
+
+Para mais detalhes sobre o Git Flow, consulte: **[docs/GIT_FLOW.md](docs/GIT_FLOW.md)**
+
+## 🔧 Instalação
 
 ```bash
 # 1. Instalar dependências
@@ -300,14 +497,21 @@ npm run test:watch
 
 ### Cobertura de Testes
 
-- ✅ **83 testes unitários** passando
-- ✅ **63+ testes E2E** organizados por módulo
+- ✅ **83 testes unitários** passando (100% dos controllers)
+- ✅ **91 testes E2E** organizados por módulo
 - ✅ **6 controllers** com cobertura completa
-- ✅ **6 módulos E2E** testados (Health, Auth, User, Role, EnvironmentPermission, RoleAssignment)
+- ✅ **6 módulos E2E** testados:
+  - Health (3 testes)
+  - Auth (6 testes)
+  - User (18 testes)
+  - Role (18 testes)
+  - EnvironmentPermission (18 testes)
+  - RoleAssignment (24 testes)
 - ✅ Testes de sucesso e cenários de erro
 - ✅ Validação de DTOs e responses
 - ✅ Mocks e injeção de dependências
 - ✅ Testes de autenticação e autorização
+- ✅ Testes com SQLite in-memory para isolamento
 
 ### Padrões Utilizados
 
@@ -334,6 +538,7 @@ npm run format         # Formatar código
 
 ## 📚 Documentação Adicional
 
+- **[docs/GIT_FLOW.md](docs/GIT_FLOW.md)** - Guia completo de Git Flow e automação
 - **[docs/AUTH_ARCHITECTURE.md](docs/AUTH_ARCHITECTURE.md)** - Arquitetura de autenticação
 - **[docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)** - Guia de observabilidade
 
