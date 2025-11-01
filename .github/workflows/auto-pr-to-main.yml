@@ -1,21 +1,34 @@
 name: Auto PR to Main
 
 on:
-  workflow_run:
-    workflows: ["CD - Develop"]
-    types:
-      - completed
+  push:
     branches:
       - develop
+  workflow_dispatch: # Permite execução manual para teste
 
 jobs:
+  check-staging:
+    name: Wait for Staging Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      should_create_pr: ${{ steps.check.outputs.should_create }}
+    
+    steps:
+      - name: Wait for other workflows to complete
+        run: sleep 10
+      
+      - name: Check if should create PR
+        id: check
+        run: echo "should_create=true" >> $GITHUB_OUTPUT
+
   create-pr:
     name: Create PR to Main
     runs-on: ubuntu-latest
-    # Only run if all checks passed on develop branch
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'develop'
+    needs: check-staging
+    if: needs.check-staging.outputs.should_create_pr == 'true'
+    permissions:
+      contents: write
+      pull-requests: write
     
     steps:
       - name: Checkout code
@@ -27,10 +40,11 @@ jobs:
       - name: Debug workflow info
         run: |
           echo "🔍 Workflow Debug Info:"
-          echo "- Workflow run conclusion: ${{ github.event.workflow_run.conclusion }}"
-          echo "- Head branch: ${{ github.event.workflow_run.head_branch }}"
-          echo "- Head SHA: ${{ github.event.workflow_run.head_sha }}"
-          echo "- Sender: ${{ github.event.sender.login }}"
+          echo "- Event name: ${{ github.event_name }}"
+          echo "- Ref: ${{ github.ref }}"
+          echo "- Ref name: ${{ github.ref_name }}"
+          echo "- SHA: ${{ github.sha }}"
+          echo "- Actor: ${{ github.actor }}"
           echo "- Current branch: $(git branch --show-current)"
           echo "- Remote branches:"
           git branch -r
@@ -92,8 +106,8 @@ jobs:
             echo "### 🎯 Deployment"
             echo "- **Environment**: Production"
             echo "- **Version**: v${{ steps.version.outputs.version }}"
-            echo "- **Latest commit**: ${{ github.event.workflow_run.head_sha }}"
-            echo "- **Author**: @${{ github.event.sender.login }}"
+            echo "- **Latest commit**: ${{ github.sha }}"
+            echo "- **Author**: @${{ github.actor }}"
             echo ""
             echo "### ⚠️ Important"
             echo "- This will trigger a production deployment"
