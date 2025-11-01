@@ -47,45 +47,39 @@ jobs:
           # Get latest commits from develop
           COMMITS=$(git log origin/main..origin/develop --pretty=format:"- %s (%h)" --no-merges | head -10)
           
-          # Create PR body file
-          cat > pr_body.md << 'EOF'
-## 🚀 Production Release - vVERSION_PLACEHOLDER
-
-This PR was automatically created after successful staging deployment.
-
-### ✅ All Checks Passed
-- ✅ Lint
-- ✅ Unit Tests
-- ✅ E2E Tests
-- ✅ Build
-- ✅ Staging Deployment
-
-### 📋 Changes
-
-```
-COMMITS_PLACEHOLDER
-```
-
-### 🎯 Deployment
-- **Environment**: Production
-- **Version**: vVERSION_PLACEHOLDER
-- **Latest commit**: COMMIT_SHA_PLACEHOLDER
-- **Author**: @AUTHOR_PLACEHOLDER
-
-### ⚠️ Important
-- This will trigger a production deployment
-- Review changes carefully before merging
-- Ensure all staging tests have passed
-
----
-*This PR was automatically generated after successful develop deployment.*
-EOF
-
-          # Replace placeholders
-          sed -i "s/VERSION_PLACEHOLDER/${{ steps.version.outputs.version }}/g" pr_body.md
-          sed -i "s|COMMITS_PLACEHOLDER|$COMMITS|g" pr_body.md
-          sed -i "s/COMMIT_SHA_PLACEHOLDER/${{ github.event.workflow_run.head_sha }}/g" pr_body.md
-          sed -i "s/AUTHOR_PLACEHOLDER/${{ github.event.sender.login }}/g" pr_body.md
+          # Create PR body using echo (more reliable)
+          {
+            echo "## 🚀 Production Release - v${{ steps.version.outputs.version }}"
+            echo ""
+            echo "This PR was automatically created after successful staging deployment."
+            echo ""
+            echo "### ✅ All Checks Passed"
+            echo "- ✅ Lint"
+            echo "- ✅ Unit Tests"
+            echo "- ✅ E2E Tests"
+            echo "- ✅ Build"
+            echo "- ✅ Staging Deployment"
+            echo ""
+            echo "### 📋 Changes"
+            echo ""
+            echo "\`\`\`"
+            echo "$COMMITS"
+            echo "\`\`\`"
+            echo ""
+            echo "### 🎯 Deployment"
+            echo "- **Environment**: Production"
+            echo "- **Version**: v${{ steps.version.outputs.version }}"
+            echo "- **Latest commit**: ${{ github.event.workflow_run.head_sha }}"
+            echo "- **Author**: @${{ github.event.sender.login }}"
+            echo ""
+            echo "### ⚠️ Important"
+            echo "- This will trigger a production deployment"
+            echo "- Review changes carefully before merging"
+            echo "- Ensure all staging tests have passed"
+            echo ""
+            echo "---"
+            echo "*This PR was automatically generated after successful develop deployment.*"
+          } > pr_body.md
 
           # Create the PR
           gh pr create \
