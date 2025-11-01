@@ -1,8 +1,12 @@
 name: Auto PR to Main
 
 on:
-  check_suite:
-    types: [completed]
+  workflow_run:
+    workflows: ["CD - Develop"]
+    types:
+      - completed
+    branches:
+      - develop
 
 jobs:
   create-pr:
@@ -10,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     # Only run if all checks passed on develop branch
     if: |
-      github.event.check_suite.conclusion == 'success' &&
-      github.event.check_suite.head_branch == 'develop'
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'develop'
     
     steps:
       - name: Checkout code
@@ -64,7 +68,7 @@ jobs:
           ### 🎯 Deployment
           - **Environment**: Production
           - **Version**: v${{ steps.version.outputs.version }}
-          - **Latest commit**: ${{ github.event.check_suite.head_sha }}
+          - **Latest commit**: ${{ github.event.workflow_run.head_sha }}
           - **Author**: @${{ github.event.sender.login }}
 
           ### ⚠️ Important
