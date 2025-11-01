@@ -1,8 +1,14 @@
 name: Auto PR to Develop
 
 on:
-  check_suite:
-    types: [completed]
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches:
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
 
 jobs:
   create-pr:
@@ -10,21 +16,21 @@ jobs:
     runs-on: ubuntu-latest
     # Only run if all checks passed and it's a valid branch
     if: |
-      github.event.check_suite.conclusion == 'success' &&
-      github.event.check_suite.head_branch != 'develop' &&
-      github.event.check_suite.head_branch != 'main'
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch != 'develop' &&
+      github.event.workflow_run.head_branch != 'main'
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.check_suite.head_branch }}
+          ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
       - name: Validate branch name
         id: validate
         run: |
-          BRANCH_NAME="${{ github.event.check_suite.head_branch }}"
+          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
           
           if [[ "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix)/.+ ]]; then
             echo "valid=true" >> $GITHUB_OUTPUT
@@ -41,7 +47,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_EXISTS=$(gh pr list --base develop --head ${{ github.event.check_suite.head_branch }} --json number --jq length)
+          PR_EXISTS=$(gh pr list --base develop --head ${{ github.event.workflow_run.head_branch }} --json number --jq length)
           echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
           echo "PR exists: $PR_EXISTS"
 
@@ -51,7 +57,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get branch name
-          BRANCH_NAME="${{ github.event.check_suite.head_branch }}"
+          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
           
           # Extract type and name from branch
           BRANCH_TYPE=$(echo "$BRANCH_NAME" | cut -d'/' -f1)
@@ -76,7 +82,7 @@ jobs:
           ### 📋 Details
           - **Type**: \`$BRANCH_TYPE\`
           - **Branch**: \`$BRANCH_NAME\`
-          - **Latest commit**: ${{ github.event.check_suite.head_sha }}
+          - **Latest commit**: ${{ github.event.workflow_run.head_sha }}
           - **Author**: @${{ github.event.sender.login }}
 
           ### ✅ CI Status
