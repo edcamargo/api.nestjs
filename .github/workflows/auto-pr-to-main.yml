@@ -47,44 +47,52 @@ jobs:
           # Get latest commits from develop
           COMMITS=$(git log origin/main..origin/develop --pretty=format:"- %s (%h)" --no-merges | head -10)
           
-          # Create PR body
-          PR_BODY="## 🚀 Production Release - v${{ steps.version.outputs.version }}
+          # Create PR body file
+          cat > pr_body.md << 'EOF'
+## 🚀 Production Release - vVERSION_PLACEHOLDER
 
-          This PR was automatically created after successful staging deployment.
+This PR was automatically created after successful staging deployment.
 
-          ### ✅ All Checks Passed
-          - ✅ Lint
-          - ✅ Unit Tests
-          - ✅ E2E Tests
-          - ✅ Build
-          - ✅ Staging Deployment
+### ✅ All Checks Passed
+- ✅ Lint
+- ✅ Unit Tests
+- ✅ E2E Tests
+- ✅ Build
+- ✅ Staging Deployment
 
-          ### 📋 Changes
-          
-          \`\`\`
-          $COMMITS
-          \`\`\`
+### 📋 Changes
 
-          ### 🎯 Deployment
-          - **Environment**: Production
-          - **Version**: v${{ steps.version.outputs.version }}
-          - **Latest commit**: ${{ github.event.workflow_run.head_sha }}
-          - **Author**: @${{ github.event.sender.login }}
+```
+COMMITS_PLACEHOLDER
+```
 
-          ### ⚠️ Important
-          - This will trigger a production deployment
-          - Review changes carefully before merging
-          - Ensure all staging tests have passed
+### 🎯 Deployment
+- **Environment**: Production
+- **Version**: vVERSION_PLACEHOLDER
+- **Latest commit**: COMMIT_SHA_PLACEHOLDER
+- **Author**: @AUTHOR_PLACEHOLDER
 
-          ---
-          *This PR was automatically generated after successful develop deployment.*"
+### ⚠️ Important
+- This will trigger a production deployment
+- Review changes carefully before merging
+- Ensure all staging tests have passed
+
+---
+*This PR was automatically generated after successful develop deployment.*
+EOF
+
+          # Replace placeholders
+          sed -i "s/VERSION_PLACEHOLDER/${{ steps.version.outputs.version }}/g" pr_body.md
+          sed -i "s|COMMITS_PLACEHOLDER|$COMMITS|g" pr_body.md
+          sed -i "s/COMMIT_SHA_PLACEHOLDER/${{ github.event.workflow_run.head_sha }}/g" pr_body.md
+          sed -i "s/AUTHOR_PLACEHOLDER/${{ github.event.sender.login }}/g" pr_body.md
 
           # Create the PR
           gh pr create \
             --base main \
             --head develop \
             --title "🎉 Release v${{ steps.version.outputs.version }}" \
-            --body "$PR_BODY" \
+            --body-file pr_body.md \
             --label "automated-pr,release,production"
 
       - name: Comment on PR
