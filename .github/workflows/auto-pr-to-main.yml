@@ -24,14 +24,31 @@ jobs:
           ref: develop
           fetch-depth: 0
 
+      - name: Debug workflow info
+        run: |
+          echo "🔍 Workflow Debug Info:"
+          echo "- Workflow run conclusion: ${{ github.event.workflow_run.conclusion }}"
+          echo "- Head branch: ${{ github.event.workflow_run.head_branch }}"
+          echo "- Head SHA: ${{ github.event.workflow_run.head_sha }}"
+          echo "- Sender: ${{ github.event.sender.login }}"
+          echo "- Current branch: $(git branch --show-current)"
+          echo "- Remote branches:"
+          git branch -r
+
       - name: Check if PR already exists
         id: check_pr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "🔍 Checking for existing PR from develop to main..."
           PR_EXISTS=$(gh pr list --base main --head develop --json number --jq length)
           echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
-          echo "PR exists: $PR_EXISTS"
+          echo "✅ PR exists: $PR_EXISTS"
+          
+          if [ "$PR_EXISTS" -gt 0 ]; then
+            echo "⚠️ PR already exists, skipping creation"
+            gh pr list --base main --head develop
+          fi
 
       - name: Get version info
         id: version
@@ -44,8 +61,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "📝 Creating PR from develop to main..."
+          
           # Get latest commits from develop
+          echo "📋 Getting commit history..."
           COMMITS=$(git log origin/main..origin/develop --pretty=format:"- %s (%h)" --no-merges | head -10)
+          
+          echo "Commits to include:"
+          echo "$COMMITS"
           
           # Create PR body using echo (more reliable)
           {
@@ -81,13 +104,24 @@ jobs:
             echo "*This PR was automatically generated after successful develop deployment.*"
           } > pr_body.md
 
+          echo "📄 PR body created, content:"
+          cat pr_body.md
+
           # Create the PR
+          echo "🚀 Creating PR..."
           gh pr create \
             --base main \
             --head develop \
             --title "🎉 Release v${{ steps.version.outputs.version }}" \
             --body-file pr_body.md \
-            --label "automated-pr,release,production"
+            --label "automated-pr,release,production" || {
+              echo "❌ Failed to create PR"
+              echo "Debug info:"
+              gh auth status
+              exit 1
+            }
+          
+          echo "✅ PR created successfully!"
 
       - name: Comment on PR
         if: steps.check_pr.outputs.pr_exists == '0'
