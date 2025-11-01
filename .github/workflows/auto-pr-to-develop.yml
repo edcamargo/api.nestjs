@@ -74,38 +74,47 @@ jobs:
             *)       EMOJI="🚀" ;;
           esac
           
-          # Create PR body
-          PR_BODY="## $EMOJI Automated Pull Request - ${BRANCH_TYPE^}
+          # Create PR body file to avoid issues with multiline strings
+          cat > pr_body.md << 'EOF'
+## EMOJI_PLACEHOLDER Automated Pull Request - BRANCH_TYPE_PLACEHOLDER
 
-          This PR was automatically created after all CI checks passed.
+This PR was automatically created after all CI checks passed.
 
-          ### 📋 Details
-          - **Type**: \`$BRANCH_TYPE\`
-          - **Branch**: \`$BRANCH_NAME\`
-          - **Latest commit**: ${{ github.event.workflow_run.head_sha }}
-          - **Author**: @${{ github.event.sender.login }}
+### 📋 Details
+- **Type**: `BRANCH_TYPE_PLACEHOLDER`
+- **Branch**: `BRANCH_NAME_PLACEHOLDER`
+- **Latest commit**: COMMIT_SHA_PLACEHOLDER
+- **Author**: @AUTHOR_PLACEHOLDER
 
-          ### ✅ CI Status
-          All checks passed successfully:
-          - ✅ Lint
-          - ✅ Unit Tests
-          - ✅ E2E Tests
-          - ✅ Build
+### ✅ CI Status
+All checks passed successfully:
+- ✅ Lint
+- ✅ Unit Tests
+- ✅ E2E Tests
+- ✅ Build
 
-          ### 📝 Next Steps
-          - Review the changes
-          - Approve and merge to \`develop\`
-          - Automated deployment to staging will follow
+### 📝 Next Steps
+- Review the changes
+- Approve and merge to `develop`
+- Automated deployment to staging will follow
 
-          ---
-          *This PR was automatically generated following Git Flow best practices.*"
+---
+*This PR was automatically generated following Git Flow best practices.*
+EOF
+
+          # Replace placeholders
+          sed -i "s/EMOJI_PLACEHOLDER/$EMOJI/g" pr_body.md
+          sed -i "s/BRANCH_TYPE_PLACEHOLDER/${BRANCH_TYPE^}/g" pr_body.md
+          sed -i "s/BRANCH_NAME_PLACEHOLDER/$BRANCH_NAME/g" pr_body.md
+          sed -i "s/COMMIT_SHA_PLACEHOLDER/${{ github.event.workflow_run.head_sha }}/g" pr_body.md
+          sed -i "s/AUTHOR_PLACEHOLDER/${{ github.event.sender.login }}/g" pr_body.md
 
           # Create the PR
           gh pr create \
             --base develop \
             --head "$BRANCH_NAME" \
             --title "$EMOJI $PR_TITLE" \
-            --body "$PR_BODY" \
+            --body-file pr_body.md \
             --label "automated-pr,$BRANCH_TYPE,ready-for-review"
 
       - name: Comment on PR
